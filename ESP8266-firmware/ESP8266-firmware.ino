@@ -10,6 +10,8 @@
  *
  */
 
+// Some rubbish
+
 const *char[] = "#DigitalClock;
 const *char[] = "123456789";
 
