@@ -10,7 +10,7 @@
  *
  */
 
-const *char[] = "#DigitalClock;
+const *char[] = "#DigitalClock";
 const *char[] = "123456789";
 
 void setup ()
