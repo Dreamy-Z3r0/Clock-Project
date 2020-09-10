@@ -313,4 +313,15 @@ F 3 "" H 5350 5800 50  0001 C CNN
 	1    5350 5350
 	1    0    0    -1  
 $EndComp
+$Comp
+L 74xx:74LS47 U?
+U 1 1 5F584897
+P 7000 1700
+F 0 "U?" H 7000 2481 50  0000 C CNN
+F 1 "74LS47" H 7000 2390 50  0000 C CNN
+F 2 "" H 7000 1700 50  0001 C CNN
+F 3 "http://www.ti.com/lit/gpn/sn74LS47" H 7000 1700 50  0001 C CNN
+	1    7000 1700
+	1    0    0    -1  
+$EndComp
 $EndSCHEMATC
