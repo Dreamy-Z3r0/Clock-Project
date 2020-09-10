@@ -1,0 +1,327 @@
+EESchema Schematic File Version 4
+EELAYER 30 0
+EELAYER END
+$Descr A4 11693 8268
+encoding utf-8
+Sheet 1 1
+Title ""
+Date ""
+Rev ""
+Comp ""
+Comment1 ""
+Comment2 ""
+Comment3 ""
+Comment4 ""
+$EndDescr
+$Comp
+L Custom:SevSeg4Inch H1
+U 1 1 5EDE2A36
+P 2000 1750
+F 0 "H1" H 2000 2325 50  0000 C CNN
+F 1 "SevSeg4Inch" H 2000 2234 50  0000 C CNN
+F 2 "Custom:SevSeg4inch" H 2000 1300 50  0001 C CNN
+F 3 "" H 2000 1300 50  0001 C CNN
+	1    2000 1750
+	1    0    0    -1  
+$EndComp
+$Comp
+L Custom:SevSeg4Inch H2
+U 1 1 5EDE3563
+P 3250 1750
+F 0 "H2" H 3250 2325 50  0000 C CNN
+F 1 "SevSeg4Inch" H 3250 2234 50  0000 C CNN
+F 2 "Custom:SevSeg4inch" H 3250 1300 50  0001 C CNN
+F 3 "" H 3250 1300 50  0001 C CNN
+	1    3250 1750
+	1    0    0    -1  
+$EndComp
+$Comp
+L Custom:SevSeg4Inch M1
+U 1 1 5EDE3F09
+P 4350 1700
+F 0 "M1" H 4350 2275 50  0000 C CNN
+F 1 "SevSeg4Inch" H 4350 2184 50  0000 C CNN
+F 2 "Custom:SevSeg4inch" H 4350 1250 50  0001 C CNN
+F 3 "" H 4350 1250 50  0001 C CNN
+	1    4350 1700
+	1    0    0    -1  
+$EndComp
+$Comp
+L Custom:SevSeg4Inch M2
+U 1 1 5EDE4B78
+P 5500 1750
+F 0 "M2" H 5500 2325 50  0000 C CNN
+F 1 "SevSeg4Inch" H 5500 2234 50  0000 C CNN
+F 2 "Custom:SevSeg4inch" H 5500 1300 50  0001 C CNN
+F 3 "" H 5500 1300 50  0001 C CNN
+	1    5500 1750
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	2350 2000 2350 2100
+Wire Wire Line
+	3600 2000 3600 2100
+Wire Wire Line
+	4700 1950 4700 2050
+Wire Wire Line
+	5850 2000 5850 2100
+$Comp
+L Transistor_Array:ULN2003A U?
+U 1 1 5F3B4529
+P 2000 3850
+F 0 "U?" H 2000 4517 50  0000 C CNN
+F 1 "ULN2003A" H 2000 4426 50  0000 C CNN
+F 2 "" H 2050 3300 50  0001 L CNN
+F 3 "http://www.ti.com/lit/ds/symlink/uln2003a.pdf" H 2100 3650 50  0001 C CNN
+	1    2000 3850
+	1    0    0    -1  
+$EndComp
+$Comp
+L Transistor_Array:ULN2003A U?
+U 1 1 5F3B7352
+P 3300 3800
+F 0 "U?" H 3300 4467 50  0000 C CNN
+F 1 "ULN2003A" H 3300 4376 50  0000 C CNN
+F 2 "" H 3350 3250 50  0001 L CNN
+F 3 "http://www.ti.com/lit/ds/symlink/uln2003a.pdf" H 3400 3600 50  0001 C CNN
+	1    3300 3800
+	1    0    0    -1  
+$EndComp
+$Comp
+L Transistor_Array:ULN2003A U?
+U 1 1 5F3B85A2
+P 4450 3800
+F 0 "U?" H 4450 4467 50  0000 C CNN
+F 1 "ULN2003A" H 4450 4376 50  0000 C CNN
+F 2 "" H 4500 3250 50  0001 L CNN
+F 3 "http://www.ti.com/lit/ds/symlink/uln2003a.pdf" H 4550 3600 50  0001 C CNN
+	1    4450 3800
+	1    0    0    -1  
+$EndComp
+$Comp
+L Transistor_Array:ULN2003A U?
+U 1 1 5F3B9616
+P 5550 3750
+F 0 "U?" H 5550 4417 50  0000 C CNN
+F 1 "ULN2003A" H 5550 4326 50  0000 C CNN
+F 2 "" H 5600 3200 50  0001 L CNN
+F 3 "http://www.ti.com/lit/ds/symlink/uln2003a.pdf" H 5650 3550 50  0001 C CNN
+	1    5550 3750
+	1    0    0    -1  
+$EndComp
+$Comp
+L Transistor_Array:ULN2003A U?
+U 1 1 5F3BAC84
+P 6750 3750
+F 0 "U?" H 6750 4417 50  0000 C CNN
+F 1 "ULN2003A" H 6750 4326 50  0000 C CNN
+F 2 "" H 6800 3200 50  0001 L CNN
+F 3 "http://www.ti.com/lit/ds/symlink/uln2003a.pdf" H 6850 3550 50  0001 C CNN
+	1    6750 3750
+	1    0    0    -1  
+$EndComp
+$Comp
+L Transistor_Array:ULN2003A U?
+U 1 1 5F3BBFEA
+P 7950 3700
+F 0 "U?" H 7950 4367 50  0000 C CNN
+F 1 "ULN2003A" H 7950 4276 50  0000 C CNN
+F 2 "" H 8000 3150 50  0001 L CNN
+F 3 "http://www.ti.com/lit/ds/symlink/uln2003a.pdf" H 8050 3500 50  0001 C CNN
+	1    7950 3700
+	1    0    0    -1  
+$EndComp
+$Comp
+L Custom:SevSeg1.8Inch Y1
+U 1 1 5F3C369B
+P 2050 5350
+F 0 "Y1" H 2050 5925 50  0000 C CNN
+F 1 "SevSeg1.8Inch" H 2050 5834 50  0000 C CNN
+F 2 "" H 2050 5800 50  0001 C CNN
+F 3 "" H 2050 5800 50  0001 C CNN
+	1    2050 5350
+	1    0    0    -1  
+$EndComp
+$Comp
+L Custom:SevSeg1.8Inch Y2
+U 1 1 5F3C518E
+P 3150 5350
+F 0 "Y2" H 3150 5925 50  0000 C CNN
+F 1 "SevSeg1.8Inch" H 3150 5834 50  0000 C CNN
+F 2 "" H 3150 5800 50  0001 C CNN
+F 3 "" H 3150 5800 50  0001 C CNN
+	1    3150 5350
+	1    0    0    -1  
+$EndComp
+$Comp
+L Custom:SevSeg1.8Inch D1
+U 1 1 5F3C70DB
+P 2050 6650
+F 0 "D1" H 2050 7225 50  0000 C CNN
+F 1 "SevSeg1.8Inch" H 2050 7134 50  0000 C CNN
+F 2 "" H 2050 7100 50  0001 C CNN
+F 3 "" H 2050 7100 50  0001 C CNN
+	1    2050 6650
+	1    0    0    -1  
+$EndComp
+$Comp
+L Custom:SevSeg1.8Inch D2
+U 1 1 5F3C818C
+P 3250 6650
+F 0 "D2" H 3250 7225 50  0000 C CNN
+F 1 "SevSeg1.8Inch" H 3250 7134 50  0000 C CNN
+F 2 "" H 3250 7100 50  0001 C CNN
+F 3 "" H 3250 7100 50  0001 C CNN
+	1    3250 6650
+	1    0    0    -1  
+$EndComp
+$Comp
+L Custom:SevSeg1.8Inch Mo1
+U 1 1 5F3C8BB8
+P 4300 6550
+F 0 "Mo1" H 4300 7125 50  0000 C CNN
+F 1 "SevSeg1.8Inch" H 4300 7034 50  0000 C CNN
+F 2 "" H 4300 7000 50  0001 C CNN
+F 3 "" H 4300 7000 50  0001 C CNN
+	1    4300 6550
+	1    0    0    -1  
+$EndComp
+$Comp
+L Custom:SevSeg1.8Inch Mo2
+U 1 1 5F3C8F3A
+P 5400 6650
+F 0 "Mo2" H 5400 7225 50  0000 C CNN
+F 1 "SevSeg1.8Inch" H 5400 7134 50  0000 C CNN
+F 2 "" H 5400 7100 50  0001 C CNN
+F 3 "" H 5400 7100 50  0001 C CNN
+	1    5400 6650
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	2400 5000 2400 5100
+Wire Wire Line
+	3500 5000 3500 5100
+Wire Wire Line
+	4550 5000 4550 5100
+Wire Wire Line
+	5700 5000 5700 5100
+Wire Wire Line
+	2400 6300 2400 6400
+Wire Wire Line
+	3600 6300 3600 6400
+Wire Wire Line
+	4650 6200 4650 6300
+Wire Wire Line
+	5750 6300 5750 6400
+$Comp
+L power:GND #PWR?
+U 1 1 5F3CC11B
+P 2000 4550
+F 0 "#PWR?" H 2000 4300 50  0001 C CNN
+F 1 "GND" H 2005 4377 50  0000 C CNN
+F 2 "" H 2000 4550 50  0001 C CNN
+F 3 "" H 2000 4550 50  0001 C CNN
+	1    2000 4550
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR?
+U 1 1 5F3CC949
+P 3300 4550
+F 0 "#PWR?" H 3300 4300 50  0001 C CNN
+F 1 "GND" H 3305 4377 50  0000 C CNN
+F 2 "" H 3300 4550 50  0001 C CNN
+F 3 "" H 3300 4550 50  0001 C CNN
+	1    3300 4550
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR?
+U 1 1 5F3CCD46
+P 4450 4550
+F 0 "#PWR?" H 4450 4300 50  0001 C CNN
+F 1 "GND" H 4455 4377 50  0000 C CNN
+F 2 "" H 4450 4550 50  0001 C CNN
+F 3 "" H 4450 4550 50  0001 C CNN
+	1    4450 4550
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR?
+U 1 1 5F3CD13E
+P 5550 4550
+F 0 "#PWR?" H 5550 4300 50  0001 C CNN
+F 1 "GND" H 5555 4377 50  0000 C CNN
+F 2 "" H 5550 4550 50  0001 C CNN
+F 3 "" H 5550 4550 50  0001 C CNN
+	1    5550 4550
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR?
+U 1 1 5F3CD53D
+P 6750 4500
+F 0 "#PWR?" H 6750 4250 50  0001 C CNN
+F 1 "GND" H 6755 4327 50  0000 C CNN
+F 2 "" H 6750 4500 50  0001 C CNN
+F 3 "" H 6750 4500 50  0001 C CNN
+	1    6750 4500
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR?
+U 1 1 5F3CD948
+P 7950 4400
+F 0 "#PWR?" H 7950 4150 50  0001 C CNN
+F 1 "GND" H 7955 4227 50  0000 C CNN
+F 2 "" H 7950 4400 50  0001 C CNN
+F 3 "" H 7950 4400 50  0001 C CNN
+	1    7950 4400
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	2000 4450 2000 4550
+Wire Wire Line
+	3300 4400 3300 4550
+Wire Wire Line
+	4450 4400 4450 4550
+Wire Wire Line
+	5550 4350 5550 4550
+Wire Wire Line
+	6750 4350 6750 4500
+Wire Wire Line
+	7950 4300 7950 4400
+$Comp
+L Custom:SevSeg1.8Inch Y3
+U 1 1 5F3C619A
+P 4200 5350
+F 0 "Y3" H 4200 5925 50  0000 C CNN
+F 1 "SevSeg1.8Inch" H 4200 5834 50  0000 C CNN
+F 2 "" H 4200 5800 50  0001 C CNN
+F 3 "" H 4200 5800 50  0001 C CNN
+	1    4200 5350
+	1    0    0    -1  
+$EndComp
+$Comp
+L Custom:SevSeg1.8Inch Y4
+U 1 1 5F3C6B48
+P 5350 5350
+F 0 "Y4" H 5350 5925 50  0000 C CNN
+F 1 "SevSeg1.8Inch" H 5350 5834 50  0000 C CNN
+F 2 "" H 5350 5800 50  0001 C CNN
+F 3 "" H 5350 5800 50  0001 C CNN
+	1    5350 5350
+	1    0    0    -1  
+$EndComp
+$Comp
+L 74xx:74LS47 U?
+U 1 1 5F584897
+P 7000 1700
+F 0 "U?" H 7000 2481 50  0000 C CNN
+F 1 "74LS47" H 7000 2390 50  0000 C CNN
+F 2 "" H 7000 1700 50  0001 C CNN
+F 3 "http://www.ti.com/lit/gpn/sn74LS47" H 7000 1700 50  0001 C CNN
+	1    7000 1700
+	1    0    0    -1  
+$EndComp
+$EndSCHEMATC
