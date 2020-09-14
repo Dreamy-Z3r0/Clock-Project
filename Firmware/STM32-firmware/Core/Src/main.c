@@ -307,6 +307,54 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
+void displayDataUpdate ( uint8_t digitToUpdate )
+{
+	HAL_GPIO_WritePin ( LATCH_GPIO_Port, LATCH_Pin, RESET );
+
+	for ( uint8_t index = 0; index <= 3; index++ )
+	{
+		HAL_GPIO_WritePin ( CLOCK_GPIO_Port, CLOCK_Pin, RESET );
+		HAL_GPIO_WritePin (  YEAR_GPIO_Port,  YEAR_Pin, ( dataOutput[0][digitToUpdate] & ( 1 << index ) ) >> index );
+		HAL_GPIO_WritePin (  TIME_GPIO_Port,  TIME_Pin, ( dataOutput[1][digitToUpdate] & ( 1 << index ) ) >> index );
+		HAL_GPIO_WritePin (  DATE_GPIO_Port,  DATE_Pin, ( dataOutput[2][digitToUpdate] & ( 1 << index ) ) >> index );
+		HAL_GPIO_WritePin ( CLOCK_GPIO_Port, CLOCK_Pin, SET );
+	}
+}
+
+void singleDigitUpdate ( void )
+{
+	HAL_GPIO_WritePin ( LATCH_GPIO_Port, LATCH_Pin, SET );
+
+	digitIndex += 1;
+	if ( 4 == digitIndex )
+		digitIndex = 0;
+	else
+		__NOP ();
+}
+
+void clockAlarm ( void )
+{
+	if ( alarmON )
+	{
+		if ( 0 < dataOutput[1][3] )
+			alarmON = 0;
+		else
+			__NOP ();
+	}
+	else
+	{
+		if (( 0 == dataOutput[1][2] ) & ( 0 == dataOutput[1][3] ))
+		{
+			if ( 7 == dataOutput[1][1] )
+				alarmON = 1;
+			else if ((1 == dataOutput[1][0]) & ( ( 1 == dataOutput[1][2] ) | ( 3 == dataOutput[1][2] )))
+				alarmON = 1;
+			else
+				__NOP ();
+		}
+	}
+}
+
 /* USER CODE END 4 */
 
 /**
