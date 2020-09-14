@@ -58,6 +58,16 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define LATCH_Pin GPIO_PIN_1
+#define LATCH_GPIO_Port GPIOA
+#define CLOCK_Pin GPIO_PIN_2
+#define CLOCK_GPIO_Port GPIOA
+#define YEAR_Pin GPIO_PIN_3
+#define YEAR_GPIO_Port GPIOA
+#define TIME_Pin GPIO_PIN_4
+#define TIME_GPIO_Port GPIOA
+#define DATE_Pin GPIO_PIN_5
+#define DATE_GPIO_Port GPIOA
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
