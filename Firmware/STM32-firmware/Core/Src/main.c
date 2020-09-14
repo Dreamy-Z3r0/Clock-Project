@@ -37,6 +37,22 @@
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
 
+/* JQ6500 commands */
+// Volume control
+	uint8_t volumeValue = 15;	// Playback volume, 30 by default, value from 0 (minimum - mute) to 30 (maximum volume)
+	uint8_t volumeUp   [] = { 0x7E, 0x02, 0x04, 0xEF };			// Volume increment
+	uint8_t volumeDown [] = { 0x7E, 0x02, 0x05, 0xEF };			// Volume decrement
+	uint8_t setVolume  [] = { 0x7E, 0x03, 0x06, 15, 0xEF };		// Set desired volume [0, 30], 15 by default
+	uint8_t getVolume  [] = { 0x7E, 0x02, 0x43, 0xEF };			// Get current volume
+// Playback control
+	uint8_t alarmFile  [] = { 0x7E, 0x04, 0x03, 0x00, 0x01, 0xEF };		// Play the alarm at 7am / 11am / 1pm / 5pm
+	uint8_t volumeTest [] = { 0x7E, 0x04, 0x03, 0x00, 0x05, 0xEF };		// Play the test file for volume control
+	uint8_t Pause	   [] = { 0x7E, 0x02, 0x0E, 0xEF };					// Pause any playing music/sound file
+// Equalizer settings
+	uint8_t EQMode = 0;		// 0/1/2/3/4/5 for Normal/Pop/Rock/Jazz/Classic/Bass
+	uint8_t setEQMode  [] = { 0x7E, 0x03, 0x07, 0, 0xEF };		// Default equalizer mode is Normal
+	uint8_t getEQMode  [] = { 0x7E, 0x02, 0x44, 0xEF };			// Get current equalizer mode
+
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -59,10 +75,28 @@ static void MX_USART3_UART_Init(void);
 static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
+void displayDataUpdate ( uint8_t digitToUpdate );
+void singleDigitUpdate ( void );
+void clockAlarm ( void );
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+/* Alarm handler */
+_Bool alarmON = 0;
+
+/* Display digit handler */
+uint8_t digitIndex = 0;
+
+/* Storage space for display digits */
+uint8_t dataOutput [ 3 ] [ 4 ] =
+{
+	{ 2, 0, 0, 0 },		// YEAR
+	{ 0, 0, 0, 0 },		// TIME
+	{ 0, 1, 0, 1 }		// DATE
+};
 
 /* USER CODE END 0 */
 
