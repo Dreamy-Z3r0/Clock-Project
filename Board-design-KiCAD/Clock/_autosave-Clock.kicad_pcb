@@ -3,7 +3,7 @@
   (general
     (thickness 1.6)
     (drawings 0)
-    (tracks 0)
+    (tracks 1)
     (zones 0)
     (modules 13)
     (nets 34)
@@ -170,7 +170,7 @@
     (at -54.356 29.464)
     (descr "DC Barrel Jack")
     (tags "Power Jack")
-    (fp_text reference REF** (at -8.45 5.75) (layer F.SilkS)
+    (fp_text reference PowerSupply (at -8.45 5.75) (layer F.SilkS)
       (effects (font (size 1 1) (thickness 0.15)))
     )
     (fp_text value BarrelJack_Horizontal (at -6.2 -5.5) (layer F.Fab)
@@ -999,5 +999,7 @@
     (pad 2 thru_hole circle (at -5.08 12) (size 1.5 1.5) (drill 0.8) (layers *.Cu *.Mask))
     (pad 1 thru_hole rect (at -10.16 12) (size 1.5 1.5) (drill 0.8) (layers *.Cu *.Mask))
   )
+
+  (segment (start 87.376 155.1) (end 87.376 154.94) (width 0.25) (layer F.Cu) (net 1))
 
 )
