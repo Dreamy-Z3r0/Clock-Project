@@ -298,9 +298,9 @@ $Comp
 L Regulator_Switching:LM2596T-ADJ Regulator-11V
 U 1 1 5F648FD6
 P 2300 1250
-F 0 "Regulator-11V" H 2300 1617 50  0000 C CNN
-F 1 "LM2596T-ADJ" H 2300 1526 50  0000 C CNN
-F 2 "Package_TO_SOT_THT:TO-220-5_P3.4x3.7mm_StaggerOdd_Lead3.8mm_Vertical" H 2350 1000 50  0001 L CIN
+F 0 "Regulator-11V" H 2300 1707 50  0000 C CNN
+F 1 "LM2596T-ADJ" H 2300 1616 50  0000 C CNN
+F 2 "Package_TO_SOT_THT:TO-220-5_Horizontal_TabUp" H 2300 1525 50  0000 C CIN
 F 3 "http://www.ti.com/lit/ds/symlink/lm2596.pdf" H 2300 1250 50  0001 C CNN
 	1    2300 1250
 	1    0    0    -1  
@@ -320,9 +320,9 @@ $Comp
 L Connector:Barrel_Jack_Switch PowerSupply
 U 1 1 5F641846
 P 800 1250
-F 0 "PowerSupply" H 857 1567 50  0000 C CNN
-F 1 "Barrel_Jack_Switch" H 857 1476 50  0000 C CNN
-F 2 "" H 850 1210 50  0001 C CNN
+F 0 "PowerSupply" H 857 1657 50  0000 C CNN
+F 1 "Barrel_Jack_Switch" H 857 1566 50  0000 C CNN
+F 2 "Connector_BarrelJack:BarrelJack_Horizontal" H 857 1475 50  0000 C CNN
 F 3 "~" H 850 1210 50  0001 C CNN
 	1    800  1250
 	1    0    0    -1  
