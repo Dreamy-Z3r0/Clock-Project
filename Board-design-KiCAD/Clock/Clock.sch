@@ -88,50 +88,6 @@ F 3 "http://www.ti.com/lit/ds/symlink/uln2003a.pdf" H 3400 3600 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Transistor_Array:ULN2003A U?
-U 1 1 5F3B85A2
-P 4450 3800
-F 0 "U?" H 4450 4467 50  0000 C CNN
-F 1 "ULN2003A" H 4450 4376 50  0000 C CNN
-F 2 "" H 4500 3250 50  0001 L CNN
-F 3 "http://www.ti.com/lit/ds/symlink/uln2003a.pdf" H 4550 3600 50  0001 C CNN
-	1    4450 3800
-	1    0    0    -1  
-$EndComp
-$Comp
-L Transistor_Array:ULN2003A U?
-U 1 1 5F3B9616
-P 5550 3750
-F 0 "U?" H 5550 4417 50  0000 C CNN
-F 1 "ULN2003A" H 5550 4326 50  0000 C CNN
-F 2 "" H 5600 3200 50  0001 L CNN
-F 3 "http://www.ti.com/lit/ds/symlink/uln2003a.pdf" H 5650 3550 50  0001 C CNN
-	1    5550 3750
-	1    0    0    -1  
-$EndComp
-$Comp
-L Transistor_Array:ULN2003A U?
-U 1 1 5F3BAC84
-P 6750 3750
-F 0 "U?" H 6750 4417 50  0000 C CNN
-F 1 "ULN2003A" H 6750 4326 50  0000 C CNN
-F 2 "" H 6800 3200 50  0001 L CNN
-F 3 "http://www.ti.com/lit/ds/symlink/uln2003a.pdf" H 6850 3550 50  0001 C CNN
-	1    6750 3750
-	1    0    0    -1  
-$EndComp
-$Comp
-L Transistor_Array:ULN2003A U?
-U 1 1 5F3BBFEA
-P 7950 3700
-F 0 "U?" H 7950 4367 50  0000 C CNN
-F 1 "ULN2003A" H 7950 4276 50  0000 C CNN
-F 2 "" H 8000 3150 50  0001 L CNN
-F 3 "http://www.ti.com/lit/ds/symlink/uln2003a.pdf" H 8050 3500 50  0001 C CNN
-	1    7950 3700
-	1    0    0    -1  
-$EndComp
-$Comp
 L Custom:SevSeg1.8Inch Y1
 U 1 1 5F3C369B
 P 2050 5350
@@ -235,62 +191,10 @@ F 3 "" H 3300 4550 50  0001 C CNN
 	1    3300 4550
 	1    0    0    -1  
 $EndComp
-$Comp
-L power:GND #PWR?
-U 1 1 5F3CCD46
-P 4450 4550
-F 0 "#PWR?" H 4450 4300 50  0001 C CNN
-F 1 "GND" H 4455 4377 50  0000 C CNN
-F 2 "" H 4450 4550 50  0001 C CNN
-F 3 "" H 4450 4550 50  0001 C CNN
-	1    4450 4550
-	1    0    0    -1  
-$EndComp
-$Comp
-L power:GND #PWR?
-U 1 1 5F3CD13E
-P 5550 4550
-F 0 "#PWR?" H 5550 4300 50  0001 C CNN
-F 1 "GND" H 5555 4377 50  0000 C CNN
-F 2 "" H 5550 4550 50  0001 C CNN
-F 3 "" H 5550 4550 50  0001 C CNN
-	1    5550 4550
-	1    0    0    -1  
-$EndComp
-$Comp
-L power:GND #PWR?
-U 1 1 5F3CD53D
-P 6750 4500
-F 0 "#PWR?" H 6750 4250 50  0001 C CNN
-F 1 "GND" H 6755 4327 50  0000 C CNN
-F 2 "" H 6750 4500 50  0001 C CNN
-F 3 "" H 6750 4500 50  0001 C CNN
-	1    6750 4500
-	1    0    0    -1  
-$EndComp
-$Comp
-L power:GND #PWR?
-U 1 1 5F3CD948
-P 7950 4400
-F 0 "#PWR?" H 7950 4150 50  0001 C CNN
-F 1 "GND" H 7955 4227 50  0000 C CNN
-F 2 "" H 7950 4400 50  0001 C CNN
-F 3 "" H 7950 4400 50  0001 C CNN
-	1    7950 4400
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
 	2000 4450 2000 4550
 Wire Wire Line
 	3300 4400 3300 4550
-Wire Wire Line
-	4450 4400 4450 4550
-Wire Wire Line
-	5550 4350 5550 4550
-Wire Wire Line
-	6750 4350 6750 4500
-Wire Wire Line
-	7950 4300 7950 4400
 $Comp
 L Custom:SevSeg1.8Inch Y3
 U 1 1 5F3C619A
@@ -322,6 +226,138 @@ F 1 "74LS47" H 7000 2390 50  0000 C CNN
 F 2 "" H 7000 1700 50  0001 C CNN
 F 3 "http://www.ti.com/lit/gpn/sn74LS47" H 7000 1700 50  0001 C CNN
 	1    7000 1700
+	1    0    0    -1  
+$EndComp
+$Comp
+L 74xx:74HC595 U?
+U 1 1 5F61C67C
+P 4800 3750
+F 0 "U?" H 4800 4531 50  0000 C CNN
+F 1 "74HC595" H 4800 4440 50  0000 C CNN
+F 2 "" H 4800 3750 50  0001 C CNN
+F 3 "http://www.ti.com/lit/ds/symlink/sn74hc595.pdf" H 4800 3750 50  0001 C CNN
+	1    4800 3750
+	1    0    0    -1  
+$EndComp
+$Comp
+L 74xx:74HC595 U?
+U 1 1 5F61CF1D
+P 6150 3750
+F 0 "U?" H 6150 4531 50  0000 C CNN
+F 1 "74HC595" H 6150 4440 50  0000 C CNN
+F 2 "" H 6150 3750 50  0001 C CNN
+F 3 "http://www.ti.com/lit/ds/symlink/sn74hc595.pdf" H 6150 3750 50  0001 C CNN
+	1    6150 3750
+	1    0    0    -1  
+$EndComp
+$Comp
+L 74xx:74HC595 U?
+U 1 1 5F61DB6E
+P 7550 3750
+F 0 "U?" H 7550 4531 50  0000 C CNN
+F 1 "74HC595" H 7550 4440 50  0000 C CNN
+F 2 "" H 7550 3750 50  0001 C CNN
+F 3 "http://www.ti.com/lit/ds/symlink/sn74hc595.pdf" H 7550 3750 50  0001 C CNN
+	1    7550 3750
+	1    0    0    -1  
+$EndComp
+$Comp
+L Transistor_Array:ULN2003A U?
+U 1 1 5F61F098
+P 8450 1700
+F 0 "U?" H 8450 2367 50  0000 C CNN
+F 1 "ULN2003A" H 8450 2276 50  0000 C CNN
+F 2 "" H 8500 1150 50  0001 L CNN
+F 3 "http://www.ti.com/lit/ds/symlink/uln2003a.pdf" H 8550 1500 50  0001 C CNN
+	1    8450 1700
+	1    0    0    -1  
+$EndComp
+$Comp
+L Transistor_Array:ULN2003A U?
+U 1 1 5F6203B3
+P 9750 1700
+F 0 "U?" H 9750 2367 50  0000 C CNN
+F 1 "ULN2003A" H 9750 2276 50  0000 C CNN
+F 2 "" H 9800 1150 50  0001 L CNN
+F 3 "http://www.ti.com/lit/ds/symlink/uln2003a.pdf" H 9850 1500 50  0001 C CNN
+	1    9750 1700
+	1    0    0    -1  
+$EndComp
+$Comp
+L 74xx:74HC14 U?
+U 1 1 5F621AF3
+P 9150 3250
+F 0 "U?" H 9150 3567 50  0000 C CNN
+F 1 "74HC14" H 9150 3476 50  0000 C CNN
+F 2 "" H 9150 3250 50  0001 C CNN
+F 3 "http://www.ti.com/lit/gpn/sn74HC14" H 9150 3250 50  0001 C CNN
+	1    9150 3250
+	1    0    0    -1  
+$EndComp
+$Comp
+L 74xx:74HC14 U?
+U 2 1 5F623073
+P 9150 3700
+F 0 "U?" H 9150 4017 50  0000 C CNN
+F 1 "74HC14" H 9150 3926 50  0000 C CNN
+F 2 "" H 9150 3700 50  0001 C CNN
+F 3 "http://www.ti.com/lit/gpn/sn74HC14" H 9150 3700 50  0001 C CNN
+	2    9150 3700
+	1    0    0    -1  
+$EndComp
+$Comp
+L 74xx:74HC14 U?
+U 3 1 5F62444F
+P 9150 4100
+F 0 "U?" H 9150 4417 50  0000 C CNN
+F 1 "74HC14" H 9150 4326 50  0000 C CNN
+F 2 "" H 9150 4100 50  0001 C CNN
+F 3 "http://www.ti.com/lit/gpn/sn74HC14" H 9150 4100 50  0001 C CNN
+	3    9150 4100
+	1    0    0    -1  
+$EndComp
+$Comp
+L 74xx:74HC14 U?
+U 4 1 5F62485C
+P 9150 4600
+F 0 "U?" H 9150 4917 50  0000 C CNN
+F 1 "74HC14" H 9150 4826 50  0000 C CNN
+F 2 "" H 9150 4600 50  0001 C CNN
+F 3 "http://www.ti.com/lit/gpn/sn74HC14" H 9150 4600 50  0001 C CNN
+	4    9150 4600
+	1    0    0    -1  
+$EndComp
+$Comp
+L 74xx:74HC14 U?
+U 5 1 5F625C4A
+P 9150 5050
+F 0 "U?" H 9150 5367 50  0000 C CNN
+F 1 "74HC14" H 9150 5276 50  0000 C CNN
+F 2 "" H 9150 5050 50  0001 C CNN
+F 3 "http://www.ti.com/lit/gpn/sn74HC14" H 9150 5050 50  0001 C CNN
+	5    9150 5050
+	1    0    0    -1  
+$EndComp
+$Comp
+L 74xx:74HC14 U?
+U 6 1 5F627579
+P 9150 5450
+F 0 "U?" H 9150 5767 50  0000 C CNN
+F 1 "74HC14" H 9150 5676 50  0000 C CNN
+F 2 "" H 9150 5450 50  0001 C CNN
+F 3 "http://www.ti.com/lit/gpn/sn74HC14" H 9150 5450 50  0001 C CNN
+	6    9150 5450
+	1    0    0    -1  
+$EndComp
+$Comp
+L 74xx:74HC14 U?
+U 7 1 5F62877C
+P 8100 5450
+F 0 "U?" H 8330 5496 50  0000 L CNN
+F 1 "74HC14" H 8330 5405 50  0000 L CNN
+F 2 "" H 8100 5450 50  0001 C CNN
+F 3 "http://www.ti.com/lit/gpn/sn74HC14" H 8100 5450 50  0001 C CNN
+	7    8100 5450
 	1    0    0    -1  
 $EndComp
 $EndSCHEMATC
