@@ -2112,61 +2112,201 @@ DATE_DATA_INPUT
 $Comp
 L Custom:STM32F103CxT6-BluePill MCU_1
 U 1 1 60511CCC
-P 1900 4850
-F 0 "MCU_1" H 1900 6215 50  0000 C CNN
-F 1 "STM32F103CxT6-BluePill" H 1900 6124 50  0000 C CNN
-F 2 "Custom:STM32F103CxT6-BluePill" H 1850 5400 50  0001 C CNN
-F 3 "" H 1850 5400 50  0001 C CNN
-	1    1900 4850
+P 2950 4750
+F 0 "MCU_1" H 2950 6115 50  0000 C CNN
+F 1 "STM32F103CxT6-BluePill" H 2950 6024 50  0000 C CNN
+F 2 "Custom:STM32F103CxT6-BluePill" H 2900 5300 50  0001 C CNN
+F 3 "" H 2900 5300 50  0001 C CNN
+	1    2950 4750
 	1    0    0    -1  
 $EndComp
-Text GLabel 1350 4850 0    50   Input ~ 0
+Text GLabel 2400 4750 0    50   Input ~ 0
 CLOCK
-Text GLabel 1350 4750 0    50   Input ~ 0
+Text GLabel 2400 4650 0    50   Input ~ 0
 LATCH
-Text GLabel 1350 4950 0    50   Input ~ 0
+Text GLabel 2400 4850 0    50   Input ~ 0
 YEAR_DATA_INPUT
-Text GLabel 1350 5150 0    50   Input ~ 0
+Text GLabel 2400 5050 0    50   Input ~ 0
 DATE_DATA_INPUT
-Text GLabel 1350 5050 0    50   Input ~ 0
+Text GLabel 2400 4950 0    50   Input ~ 0
 TIME_DATA_INPUT
-Text GLabel 1350 3750 0    50   Input ~ 0
+Text GLabel 2400 3650 0    50   Input ~ 0
 +5V
-NoConn ~ 1350 4250
-NoConn ~ 1350 4450
+NoConn ~ 2400 4150
+NoConn ~ 2400 4350
 $Comp
 L power:GND #PWR01
 U 1 1 5F6AF068
-P 2550 6100
-F 0 "#PWR01" H 2550 5850 50  0001 C CNN
-F 1 "GND" H 2555 5927 50  0000 C CNN
-F 2 "" H 2550 6100 50  0001 C CNN
-F 3 "" H 2550 6100 50  0001 C CNN
-	1    2550 6100
+P 3600 6000
+F 0 "#PWR01" H 3600 5750 50  0001 C CNN
+F 1 "GND" H 3605 5827 50  0000 C CNN
+F 2 "" H 3600 6000 50  0001 C CNN
+F 3 "" H 3600 6000 50  0001 C CNN
+	1    3600 6000
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	2450 5800 2450 5900
+	3500 5700 3500 5800
 Wire Wire Line
-	2450 5900 2450 6000
-Connection ~ 2450 5900
+	3500 5800 3500 5900
+Connection ~ 3500 5800
 Wire Wire Line
-	2550 6100 2550 5900
+	3600 6000 3600 5800
 Wire Wire Line
-	2550 5900 2450 5900
-Text GLabel 1350 5250 0    50   Input ~ 0
+	3600 5800 3500 5800
+Text GLabel 2400 5150 0    50   Input ~ 0
 DP_PWM
-NoConn ~ 2450 5400
-NoConn ~ 2450 5500
-NoConn ~ 2450 5600
-Text GLabel 2450 4900 2    50   Input ~ 0
+NoConn ~ 3500 5300
+NoConn ~ 3500 5400
+NoConn ~ 3500 5500
+Text GLabel 3500 4800 2    50   Input ~ 0
 EN_DIGIT_1
-Text GLabel 2450 5000 2    50   Input ~ 0
+Text GLabel 3500 4900 2    50   Input ~ 0
 EN_DIGIT_2
-Text GLabel 2450 5100 2    50   Input ~ 0
+Text GLabel 3500 5000 2    50   Input ~ 0
 EN_DIGIT_3
-Text GLabel 2450 5200 2    50   Input ~ 0
+Text GLabel 3500 5100 2    50   Input ~ 0
 EN_DIGIT_4
+$Comp
+L Custom:Generic-ESP8266 MCU_2
+U 1 1 5F825E1F
+P 2950 6750
+F 0 "MCU_2" H 2950 7115 50  0000 C CNN
+F 1 "Generic-ESP8266" H 2950 7024 50  0000 C CNN
+F 2 "Custom:Generic-ESP8266" H 2700 6750 50  0001 C CNN
+F 3 "" H 2700 6750 50  0001 C CNN
+	1    2950 6750
+	1    0    0    -1  
+$EndComp
+Text GLabel 3500 4200 2    50   Input ~ 0
+RTC_SCL
+Text GLabel 7200 10350 2    50   Input ~ 0
+RTC_SCL
+Text GLabel 3500 4300 2    50   Input ~ 0
+RTC_SDA
+Text GLabel 7200 10150 2    50   Input ~ 0
+RTC_SDA
+Text GLabel 2400 3850 0    50   Input ~ 0
++3.3V
+Text GLabel 6600 10050 0    50   Input ~ 0
++3.3V
+$Comp
+L power:GND #PWR03
+U 1 1 5F82DF5B
+P 6500 10550
+F 0 "#PWR03" H 6500 10300 50  0001 C CNN
+F 1 "GND" H 6505 10377 50  0000 C CNN
+F 2 "" H 6500 10550 50  0001 C CNN
+F 3 "" H 6500 10550 50  0001 C CNN
+	1    6500 10550
+	1    0    0    -1  
+$EndComp
+Text GLabel 2400 5450 0    50   Input ~ 0
+STM32TX-EPS8266RX
+Text GLabel 2400 5550 0    50   Input ~ 0
+STM32RX-EPS8266TX
+Text GLabel 3400 7050 2    50   Input ~ 0
+STM32TX-EPS8266RX
+Text GLabel 3400 7150 2    50   Input ~ 0
+STM32RX-EPS8266TX
+$Comp
+L power:GND #PWR02
+U 1 1 5F84B160
+P 2400 7250
+F 0 "#PWR02" H 2400 7000 50  0001 C CNN
+F 1 "GND" H 2405 7077 50  0000 C CNN
+F 2 "" H 2400 7250 50  0001 C CNN
+F 3 "" H 2400 7250 50  0001 C CNN
+	1    2400 7250
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	2400 7250 2400 7150
+Wire Wire Line
+	2400 7150 2500 7150
+NoConn ~ 2500 6900
+NoConn ~ 3400 6650
+NoConn ~ 3400 6750
+NoConn ~ 3400 6850
+$Comp
+L Custom:DS3231-RPi RTC1
+U 1 1 5F952233
+P 6900 10250
+F 0 "RTC1" H 6900 10715 50  0000 C CNN
+F 1 "DS3231-RPi" H 6900 10624 50  0000 C CNN
+F 2 "Custom:DS3231-RPi" H 6900 10350 50  0001 C CNN
+F 3 "" H 6900 10350 50  0001 C CNN
+	1    6900 10250
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	6500 10550 6500 10450
+Wire Wire Line
+	6500 10450 6600 10450
+$Comp
+L Regulator_Linear:LM1117-3.3 Regulator-3.3V1
+U 1 1 5F9A0025
+P 1500 6650
+F 0 "Regulator-3.3V1" H 1500 6892 50  0000 C CNN
+F 1 "LM1117-3.3" H 1500 6801 50  0000 C CNN
+F 2 "Package_TO_SOT_THT:TO-220-3_Horizontal_TabDown" H 1500 6650 50  0001 C CNN
+F 3 "http://www.ti.com/lit/ds/symlink/lm1117.pdf" H 1500 6650 50  0001 C CNN
+	1    1500 6650
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:CP1 3.3V-Cin1
+U 1 1 5FA17788
+P 1100 6900
+F 0 "3.3V-Cin1" H 986 6946 50  0000 R CNN
+F 1 "CP1" H 986 6855 50  0000 R CNN
+F 2 "Capacitor_THT:CP_Radial_D4.0mm_P2.00mm" H 1100 6900 50  0001 C CNN
+F 3 "~" H 1100 6900 50  0001 C CNN
+	1    1100 6900
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:CP1 3.3V-Cout1
+U 1 1 5FA18039
+P 1900 6900
+F 0 "3.3V-Cout1" H 2015 6946 50  0000 L CNN
+F 1 "CP1" H 2015 6855 50  0000 L CNN
+F 2 "Capacitor_THT:CP_Radial_D4.0mm_P2.00mm" H 1900 6900 50  0001 C CNN
+F 3 "~" H 1900 6900 50  0001 C CNN
+	1    1900 6900
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	1100 6750 1100 6650
+Wire Wire Line
+	1100 6650 1200 6650
+Wire Wire Line
+	1800 6650 1900 6650
+Wire Wire Line
+	1900 6650 1900 6750
+Wire Wire Line
+	1100 7050 1500 7050
+Wire Wire Line
+	1500 6950 1500 7050
+Connection ~ 1500 7050
+Wire Wire Line
+	1500 7050 1900 7050
+Text GLabel 1100 6650 0    50   Input ~ 0
++5V
+Wire Wire Line
+	1900 6650 2500 6650
+Connection ~ 1900 6650
+$Comp
+L power:GND #PWR04
+U 1 1 5FB05042
+P 1500 7050
+F 0 "#PWR04" H 1500 6800 50  0001 C CNN
+F 1 "GND" H 1505 6877 50  0000 C CNN
+F 2 "" H 1500 7050 50  0001 C CNN
+F 3 "" H 1500 7050 50  0001 C CNN
+	1    1500 7050
+	1    0    0    -1  
+$EndComp
 Wire Bus Line
 	10450 2750 10450 3750
 Wire Bus Line
