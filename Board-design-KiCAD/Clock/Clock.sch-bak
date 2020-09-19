@@ -2109,6 +2109,64 @@ Text GLabel 5700 5700 0    50   Input ~ 0
 YEAR_DATA_INPUT
 Text GLabel 5700 7600 0    50   Input ~ 0
 DATE_DATA_INPUT
+$Comp
+L Custom:STM32F103CxT6-BluePill MCU_1
+U 1 1 60511CCC
+P 1900 4850
+F 0 "MCU_1" H 1900 6215 50  0000 C CNN
+F 1 "STM32F103CxT6-BluePill" H 1900 6124 50  0000 C CNN
+F 2 "Custom:STM32F103CxT6-BluePill" H 1850 5400 50  0001 C CNN
+F 3 "" H 1850 5400 50  0001 C CNN
+	1    1900 4850
+	1    0    0    -1  
+$EndComp
+Text GLabel 1350 4850 0    50   Input ~ 0
+CLOCK
+Text GLabel 1350 4750 0    50   Input ~ 0
+LATCH
+Text GLabel 1350 4950 0    50   Input ~ 0
+YEAR_DATA_INPUT
+Text GLabel 1350 5150 0    50   Input ~ 0
+DATE_DATA_INPUT
+Text GLabel 1350 5050 0    50   Input ~ 0
+TIME_DATA_INPUT
+Text GLabel 1350 3750 0    50   Input ~ 0
++5V
+NoConn ~ 1350 4250
+NoConn ~ 1350 4450
+$Comp
+L power:GND #PWR?
+U 1 1 5F6AF068
+P 2550 6100
+F 0 "#PWR?" H 2550 5850 50  0001 C CNN
+F 1 "GND" H 2555 5927 50  0000 C CNN
+F 2 "" H 2550 6100 50  0001 C CNN
+F 3 "" H 2550 6100 50  0001 C CNN
+	1    2550 6100
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	2450 5800 2450 5900
+Wire Wire Line
+	2450 5900 2450 6000
+Connection ~ 2450 5900
+Wire Wire Line
+	2550 6100 2550 5900
+Wire Wire Line
+	2550 5900 2450 5900
+Text GLabel 1350 5250 0    50   Input ~ 0
+DP_PWM
+NoConn ~ 2450 5400
+NoConn ~ 2450 5500
+NoConn ~ 2450 5600
+Text GLabel 2450 4900 2    50   Input ~ 0
+EN_DIGIT_1
+Text GLabel 2450 5000 2    50   Input ~ 0
+EN_DIGIT_2
+Text GLabel 2450 5100 2    50   Input ~ 0
+EN_DIGIT_3
+Text GLabel 2450 5200 2    50   Input ~ 0
+EN_DIGIT_4
 Wire Bus Line
 	10450 2750 10450 3750
 Wire Bus Line
