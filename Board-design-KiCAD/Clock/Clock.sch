@@ -2184,21 +2184,21 @@ Text GLabel 1800 8200 2    50   Input ~ 0
 RTC_SCL
 Text GLabel 3500 4300 2    50   Input ~ 0
 RTC_SDA
-Text GLabel 1800 8000 2    50   Input ~ 0
+Text GLabel 1800 7900 2    50   Input ~ 0
 RTC_SDA
 Text GLabel 2400 3850 0    50   Input ~ 0
 +3.3V
-Text GLabel 1200 7900 0    50   Input ~ 0
+Text GLabel 1200 7800 0    50   Input ~ 0
 +3.3V
 $Comp
 L power:GND #PWR03
 U 1 1 5F82DF5B
-P 1100 8400
-F 0 "#PWR03" H 1100 8150 50  0001 C CNN
-F 1 "GND" H 1105 8227 50  0000 C CNN
-F 2 "" H 1100 8400 50  0001 C CNN
-F 3 "" H 1100 8400 50  0001 C CNN
-	1    1100 8400
+P 1800 8600
+F 0 "#PWR03" H 1800 8350 50  0001 C CNN
+F 1 "GND" H 1805 8427 50  0000 C CNN
+F 2 "" H 1800 8600 50  0001 C CNN
+F 3 "" H 1800 8600 50  0001 C CNN
+	1    1800 8600
 	1    0    0    -1  
 $EndComp
 Text GLabel 2400 5450 0    50   Input ~ 0
@@ -2228,21 +2228,6 @@ NoConn ~ 2500 6900
 NoConn ~ 3400 6650
 NoConn ~ 3400 6750
 NoConn ~ 3400 6850
-$Comp
-L Custom:DS3231-RPi RTC1
-U 1 1 5F952233
-P 1500 8100
-F 0 "RTC1" H 1500 8565 50  0000 C CNN
-F 1 "DS3231-RPi" H 1500 8474 50  0000 C CNN
-F 2 "Custom:DS3231-RPi" H 1500 8200 50  0001 C CNN
-F 3 "" H 1500 8200 50  0001 C CNN
-	1    1500 8100
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	1100 8400 1100 8300
-Wire Wire Line
-	1100 8300 1200 8300
 $Comp
 L Regulator_Linear:LM1117-3.3 Regulator-3.3V1
 U 1 1 5F9A0025
@@ -2307,6 +2292,28 @@ F 3 "" H 1500 7050 50  0001 C CNN
 	1    1500 7050
 	1    0    0    -1  
 $EndComp
+$Comp
+L Custom:DS3231-Module RTC1
+U 1 1 5F69BB73
+P 1500 8150
+F 0 "RTC1" H 1500 8765 50  0000 C CNN
+F 1 "DS3231-Module" H 1500 8674 50  0000 C CNN
+F 2 "Custom:DS3231-Module" H 1500 8400 50  0001 C CNN
+F 3 "" H 1500 8400 50  0001 C CNN
+	1    1500 8150
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	1800 8400 1800 8500
+Wire Wire Line
+	1800 8500 1800 8600
+Connection ~ 1800 8500
+Wire Wire Line
+	1200 7800 1200 7900
+NoConn ~ 1200 8350
+NoConn ~ 1200 8250
+NoConn ~ 1800 7800
+NoConn ~ 1800 8100
 Wire Bus Line
 	10450 2850 10450 3850
 Wire Bus Line
