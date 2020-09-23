@@ -1,60 +1,30 @@
 // Import required libraries
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
+#include <ESP8266mDNS.h>
 #include <Hash.h>
 #include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 
+#include "HTML_INDEX.h"
+
 // Local server credentials
-const char* server_ssid     = "Digital Clock: 192.168.4.1";
-const char* server_password = "123456789";
+String server_ssid;
+String server_password;
+
+// Update restart
+bool NewAPSSID = false;
+bool NewAPPassword = false;
 
 // Create AsyncWebServer object on port 80
 AsyncWebServer server(80);
 
-const char* PARAM_STRING_SSID = "WiFi SSID";
-const char* PARAM_STRING_PASSWORD = "WiFi Password";
+const char* PARAM_STRING_AP_SSID = "AP SSID";
+const char* PARAM_STRING_AP_PASSWORD = "AP Password";
 const char* PARAM_VOLUME = "JQ6500 Volume";
 
 bool TEST_SOUND_REQUEST = false;
 bool CANCEL_REQUEST = false;
-
-// HTML web page to handle 3 input fields
-const char index_html[] PROGMEM = R"rawliteral(
-<!DOCTYPE HTML><html><head>
-  <title>ESP Input Form</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script>
-    function submitMessage() {
-      alert("Saved value to ESP SPIFFS");
-      setTimeout(function(){ document.location.reload(false); }, 500);   
-    }
-  </script></head><body>
-  <form action="/get" target="hidden-form">
-    WiFi Credentials:<br>
-      Current WiFi SSID: %WiFi SSID%<br>
-      
-      New SSID:       
-        <input type="text" name="WiFi SSID">
-        <input type="submit" value="Submit" onclick="submitMessage()">
-  </form>
-  <form action="/get" target="hidden-form">
-      New Password:
-        <input type="text" name="WiFi Password">
-        <input type="submit" value="Submit" onclick="submitMessage()">
-  </form><br><br>
-
-    Speaker:   
-    <a href="/play" target="hidden-form"><button class="button">Play test sound</button></a>     
-    <a href="/stop" target="hidden-form"><button class="button">Stop test sound</button></a>
-    <br>
-  <form action="/get" target="hidden-form">
-    Current volume: %JQ6500 Volume%<br>
-    Set to (0 - 30): <input type="number" name="JQ6500 Volume">
-    <input type="submit" value="Submit" onclick="submitMessage()">
-  </form>
-  <iframe style="display:none" name="hidden-form"></iframe>
-</body></html>)rawliteral";
 
 void notFound(AsyncWebServerRequest *request) {
   request->send(404, "text/plain", "Not found");
@@ -74,28 +44,31 @@ String readFile(fs::FS &fs, const char * path){
 
 void writeFile(fs::FS &fs, const char * path, const char * message){
   File file = fs.open(path, "w");
-  if(!file){
-    //Serial.println("- failed to open file for writing");
+  if(!file)
+  {
+    Serial.println("- failed to open file for writing");
     return;
   }
-  if(file.print(message)){
-    //Serial.println("- file written");
+  if(file.print(message))
+  {
+    Serial.println("- file written");
   } else {
-    //Serial.println("- write failed");
+    Serial.println("- write failed");
   }
 }
 
 // Replaces placeholder with stored values
-String processor(const String& var){
-  //Serial.println(var);
-  if(var == "WiFi SSID")
+String processor(const String& var)
+{
+  if (var == "AP SSID")
   {
-    String SSID_FOR_HTML = readFile(SPIFFS, "/WiFi_SSID.txt");
-    String EMPTY_VALUE = "";
-    if (String("") == SSID_FOR_HTML) return "(None)";
-    else return SSID_FOR_HTML;
+    return server_ssid;
   }
-  else if(var == "JQ6500 Volume")
+  else if (var == "AP Password")
+  {
+    return server_password;
+  }
+  else if (var == "JQ6500 Volume")
   {
     return readFile(SPIFFS, "/JQ6500_Volume.txt");
   }
@@ -111,38 +84,64 @@ void setup()
       return;
   }
 
-  WiFi.mode(WIFI_AP_STA);
+  LoadAPCredentials();
+
+  WiFi.mode(WIFI_AP);
   WiFi.softAP(server_ssid, server_password);
 
   // Send web page with input fields to client
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
+  {
     request->send_P(200, "text/html", index_html, processor);
   });
 
   // Send a GET request to <ESP_IP>/get?WiFi SSID=<inputMessage>
-  server.on("/get", HTTP_GET, [] (AsyncWebServerRequest *request) {
+  server.on("/get", HTTP_GET, [] (AsyncWebServerRequest *request) 
+  {
     String inputMessage;
-    // GET WiFi SSID value on <ESP_IP>/get?WiFi SSID=<inputMessage>
-    if (request->hasParam(PARAM_STRING_SSID)) {
-      inputMessage = request->getParam(PARAM_STRING_SSID)->value();
-      writeFile(SPIFFS, "/WiFi_SSID.txt", inputMessage.c_str());
+    bool updateReady = false;
+    // GET AP SSID value on <ESP_IP>/get?AP SSID=<inputMessage>
+    if (request->hasParam(PARAM_STRING_AP_SSID)) {
+      inputMessage = request->getParam(PARAM_STRING_AP_SSID)->value();
+      if (String() != inputMessage)
+      {
+        inputMessage += String(" (192.168.4.1)");
+        NewAPSSID = true;
+        writeFile(SPIFFS, "/ESP_AP_SSID.txt", inputMessage.c_str());
+        LoadAPCredentials();
+      }
     }
-    // GET WiFi Password value on <ESP_IP>/get?WiFi Password=<inputMessage>
-    else if (request->hasParam(PARAM_STRING_PASSWORD)) {
-      inputMessage = request->getParam(PARAM_STRING_PASSWORD)->value();
-      writeFile(SPIFFS, "/WiFi_Password.txt", inputMessage.c_str());
+    // GET AP Password value on <ESP_IP>/get?AP Password=<inputMessage>
+    else if (request->hasParam(PARAM_STRING_AP_PASSWORD)) {
+      inputMessage = request->getParam(PARAM_STRING_AP_PASSWORD)->value();
+      if (String() != inputMessage)
+      {
+        NewAPPassword = true;
+        writeFile(SPIFFS, "/ESP_AP_PASSWORD.txt", inputMessage.c_str());
+        LoadAPCredentials();
+      }
     }
     // GET JQ6500 Volume value on <ESP_IP>/get?JQ6500 Volume=<inputMessage>
     else if (request->hasParam(PARAM_VOLUME)) {
       inputMessage = request->getParam(PARAM_VOLUME)->value();
-      writeFile(SPIFFS, "/JQ6500_Volume.txt", inputMessage.c_str());
+      if (String() != inputMessage)
+        writeFile(SPIFFS, "/JQ6500_Volume.txt", inputMessage.c_str());
     }
     else {
       inputMessage = "No message sent";
     }
     request->send(200, "text/text", inputMessage);
   });
-  server.on("/play", HTTP_GET, [](AsyncWebServerRequest *request){
+  
+  server.on("/ForceUpdate", HTTP_GET, [](AsyncWebServerRequest *request)
+  {
+    NewAPSSID = true;
+    NewAPPassword = true;
+    request->send(200, "text/text", "ESP restarting...");
+  });
+
+  server.on("/play", HTTP_GET, [](AsyncWebServerRequest *request)
+  {
     TEST_SOUND_REQUEST = true;
     CANCEL_REQUEST = false;
     request->send(200, "text/text", "Test sound is on.");
@@ -154,48 +153,21 @@ void setup()
   });
   server.onNotFound(notFound);
   server.begin();
-
-  pinMode(2, OUTPUT);
-  digitalWrite(2, HIGH);
-
-  WiFi.begin(readFile(SPIFFS, "/WiFi_SSID.txt"), readFile(SPIFFS, "/WiFi_Password.txt"));
 }
 
 void loop() 
 {
-  if (TEST_SOUND_REQUEST)
-  {
-    TEST_SOUND_REQUEST = false;
-    CANCEL_REQUEST = false;
-    digitalWrite(2, LOW);
-  }
-  else if (CANCEL_REQUEST)
-  {
-    CANCEL_REQUEST = false;
-    TEST_SOUND_REQUEST = false;
-    digitalWrite(2, HIGH);
-  }
+  if (NewAPSSID && NewAPPassword) ESP.restart();
+}
 
-  String yourInputString = readFile(SPIFFS, "/WiFi_SSID.txt");
-  Serial.print("*** Your WiFi SSID: ");
-  Serial.println(yourInputString);
+void LoadAPCredentials(void)
+{
+  String LoadedSSID = readFile(SPIFFS, "/ESP_AP_SSID.txt");
+  String LoadedPassword = readFile(SPIFFS, "/ESP_AP_PASSWORD.txt");
   
-//  String yourInputInt = readFile(SPIFFS, "/WiFi_Password.txt");
-//  Serial.print("*** Your WiFi Password: ");
-//  Serial.println(yourInputInt);
-//  delay(5000);
+  if (String() != LoadedSSID) server_ssid = LoadedSSID;
+  else server_ssid = "Clock Config: 192.168.4.1";
 
-  if (WiFi.status() != WL_CONNECTED)
-  {
-    WiFi.begin(readFile(SPIFFS, "/WiFi_SSID.txt"), readFile(SPIFFS, "/WiFi_Password.txt"));
-    delay(5000);
-    if (WiFi.status() == WL_CONNECTED)
-    {
-      server.begin();
-    }
-  }
-  else
-  {
-    digitalWrite(2, LOW);
-  }
+  if (String() != LoadedPassword) server_password = LoadedPassword;
+  else server_password = "123456789";
 }
