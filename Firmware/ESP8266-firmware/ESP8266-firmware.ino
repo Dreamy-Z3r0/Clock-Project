@@ -7,21 +7,14 @@
 #include <ESPAsyncWebServer.h>
 
 #include "HTML_INDEX.h"
+#include "Storage_and_Handlers.h"
 
-// Local server credentials
-String server_ssid;
-String server_password;
-
-// Update restart
-bool NewAPSSID = false;
-bool NewAPPassword = false;
+NetworkCredentials ESP8266_AP;
+TimeData HTML_TimeInput;
+CalendarData HTML_CalendarInput;
 
 // Create AsyncWebServer object on port 80
 AsyncWebServer server(80);
-
-const char* PARAM_STRING_AP_SSID = "AP SSID";
-const char* PARAM_STRING_AP_PASSWORD = "AP Password";
-const char* PARAM_VOLUME = "JQ6500 Volume";
 
 bool TEST_SOUND_REQUEST = false;
 bool CANCEL_REQUEST = false;
@@ -62,11 +55,19 @@ String processor(const String& var)
 {
   if (var == "AP SSID")
   {
-    return server_ssid;
+    return ESP8266_AP.CURRENT_AP_SSID;
+  }
+  else if (var == "New AP SSID")
+  {
+    return ESP8266_AP.NEW_AP_SSID;
   }
   else if (var == "AP Password")
   {
-    return server_password;
+    return ESP8266_AP.CURRENT_AP_PASSWORD;
+  }
+  else if (var == "New AP Password")
+  {
+    return ESP8266_AP.NEW_AP_PASSWORD;
   }
   else if (var == "JQ6500 Volume")
   {
@@ -85,9 +86,14 @@ void setup()
   }
 
   LoadAPCredentials();
+  ESP8266_AP.NEW_AP_SSID = "(none)";
+  ESP8266_AP.NEW_AP_PASSWORD = "(none)";
+  ESP8266_AP.NewAPSSID = false;
+  ESP8266_AP.NewAPPassword = false;
+  ESP8266_AP.NewDataSet = true;
 
   WiFi.mode(WIFI_AP);
-  WiFi.softAP(server_ssid, server_password);
+  WiFi.softAP(ESP8266_AP.CURRENT_AP_SSID, ESP8266_AP.CURRENT_AP_PASSWORD);
 
   // Send web page with input fields to client
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
@@ -99,46 +105,96 @@ void setup()
   server.on("/get", HTTP_GET, [] (AsyncWebServerRequest *request) 
   {
     String inputMessage;
-    bool updateReady = false;
+    String MESSAGE;
+
     // GET AP SSID value on <ESP_IP>/get?AP SSID=<inputMessage>
-    if (request->hasParam(PARAM_STRING_AP_SSID)) {
+    if (request->hasParam(PARAM_STRING_AP_SSID)) 
+    {
       inputMessage = request->getParam(PARAM_STRING_AP_SSID)->value();
       if (String() != inputMessage)
       {
-        inputMessage += String(" (192.168.4.1)");
-        NewAPSSID = true;
-        writeFile(SPIFFS, "/ESP_AP_SSID.txt", inputMessage.c_str());
-        LoadAPCredentials();
+        ESP8266_AP.NEW_AP_SSID = inputMessage + String(" (192.168.4.1)");
+        if (ESP8266_AP.CURRENT_AP_SSID != ESP8266_AP.NEW_AP_SSID)
+        {
+          ESP8266_AP.NewAPSSID = true;
+          MESSAGE = "New SSID issued.";
+        }
+      }
+      else
+      {
+        ESP8266_AP.NEW_AP_SSID = "(none)";
+        ESP8266_AP.NewAPSSID = false;
+        MESSAGE = "No change for SSID.";
       }
     }
     // GET AP Password value on <ESP_IP>/get?AP Password=<inputMessage>
-    else if (request->hasParam(PARAM_STRING_AP_PASSWORD)) {
+    else if (request->hasParam(PARAM_STRING_AP_PASSWORD)) 
+    {
       inputMessage = request->getParam(PARAM_STRING_AP_PASSWORD)->value();
       if (String() != inputMessage)
       {
-        NewAPPassword = true;
-        writeFile(SPIFFS, "/ESP_AP_PASSWORD.txt", inputMessage.c_str());
-        LoadAPCredentials();
+        ESP8266_AP.NEW_AP_PASSWORD = inputMessage;
+        if (ESP8266_AP.CURRENT_AP_SSID != ESP8266_AP.NEW_AP_PASSWORD)
+        {
+          ESP8266_AP.NewAPPassword = true;
+          MESSAGE = "New password issued.";
+        }
+      }
+      else
+      {
+        ESP8266_AP.NEW_AP_PASSWORD = "(none)";
+        ESP8266_AP.NewAPSSID = false;
+        MESSAGE = "No change for password.";
       }
     }
     // GET JQ6500 Volume value on <ESP_IP>/get?JQ6500 Volume=<inputMessage>
-    else if (request->hasParam(PARAM_VOLUME)) {
+    else if (request->hasParam(PARAM_VOLUME)) 
+    {
       inputMessage = request->getParam(PARAM_VOLUME)->value();
+    
       if (String() != inputMessage)
-        writeFile(SPIFFS, "/JQ6500_Volume.txt", inputMessage.c_str());
+      {
+        uint8_t inputNumber = StringToNumber(inputMessage, inputMessage.length());
+        if (('e' != inputNumber) & (inputNumber <= 30))
+        {
+          writeFile(SPIFFS, "/JQ6500_Volume.txt", inputMessage.c_str());
+        }
+        else
+        {
+          MESSAGE = "Invalid input numebr.";
+        }
+      }   
     }
-    else {
-      inputMessage = "No message sent";
+    else 
+    {
+      MESSAGE = "No message sent";
     }
-    request->send(200, "text/text", inputMessage);
+    request->send(200, "text/text", MESSAGE);
   });
   
-  server.on("/ForceUpdate", HTTP_GET, [](AsyncWebServerRequest *request)
+  server.on("/UpdateRequest", HTTP_GET, [](AsyncWebServerRequest *request)
   {
-    NewAPSSID = true;
-    NewAPPassword = true;
-    request->send(200, "text/text", "ESP restarting...");
+    if (ESP8266_AP.NewAPSSID || ESP8266_AP.NewAPPassword)
+      ESP8266_AP.NewDataSet = false;
+
+    request->send(200, "text/text", "Credentials updated. ESP restarting...");
   });
+  server.on("/Discard", HTTP_GET, [](AsyncWebServerRequest *request)
+  {
+    ESP8266_AP.NewAPSSID = false;
+    ESP8266_AP.NewAPPassword = false;
+    ESP8266_AP.NewDataSet = true;
+
+    ESP8266_AP.NEW_AP_SSID = "(none)";
+    ESP8266_AP.NEW_AP_PASSWORD = "(none)";
+
+    request->send(200, "text/text", "New credentials discarded!");
+  });
+
+//  server.on("/Clock", HTTP_GET, [] (AsyncWebServerRequest *request)
+//  {
+//    
+//  }
 
   server.on("/play", HTTP_GET, [](AsyncWebServerRequest *request)
   {
@@ -157,7 +213,19 @@ void setup()
 
 void loop() 
 {
-  if (NewAPSSID && NewAPPassword) ESP.restart();
+  if (!ESP8266_AP.NewDataSet) 
+  {
+    if (ESP8266_AP.NewAPSSID)
+    {
+      writeFile(SPIFFS, "/ESP_AP_SSID.txt", ESP8266_AP.NEW_AP_SSID.c_str());
+    }
+    if (ESP8266_AP.NewAPPassword)
+    {
+      writeFile(SPIFFS, "/ESP_AP_PASSWORD.txt", ESP8266_AP.NEW_AP_PASSWORD.c_str());
+    }
+
+    ESP.restart();
+  }
 }
 
 void LoadAPCredentials(void)
@@ -165,9 +233,33 @@ void LoadAPCredentials(void)
   String LoadedSSID = readFile(SPIFFS, "/ESP_AP_SSID.txt");
   String LoadedPassword = readFile(SPIFFS, "/ESP_AP_PASSWORD.txt");
   
-  if (String() != LoadedSSID) server_ssid = LoadedSSID;
-  else server_ssid = "Clock Config: 192.168.4.1";
+  if (String() != LoadedSSID) 
+    ESP8266_AP.CURRENT_AP_SSID = LoadedSSID;
+  else 
+    ESP8266_AP.CURRENT_AP_SSID = "Clock Config: 192.168.4.1";
 
-  if (String() != LoadedPassword) server_password = LoadedPassword;
-  else server_password = "123456789";
+  if (String() != LoadedPassword) 
+    ESP8266_AP.CURRENT_AP_PASSWORD = LoadedPassword;
+  else 
+    ESP8266_AP.CURRENT_AP_PASSWORD = "123456789";
+}
+
+uint8_t StringToNumber(String inputString, uint8_t inputStringLength)
+{
+  uint8_t outputNumber = 0;
+
+  for (uint8_t index = 0; index < inputStringLength; index++)
+  {
+    if (('0' <= inputString[index]) & (inputString[index] <= '9'))
+    {
+      outputNumber = outputNumber*10 + (inputString[index] - '0');
+    }
+    else
+    {
+      outputNumber = 'e';
+      break;
+    }
+  }
+
+  return outputNumber;
 }
