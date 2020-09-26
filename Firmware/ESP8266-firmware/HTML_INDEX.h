@@ -16,6 +16,10 @@ const char index_html[] PROGMEM = R"rawliteral(
       alert("New credential data discarded!");
       setTimeout(function(){ document.location.reload(false); }, 500);   
     }
+    function TimeCalendarMessage() {
+      alert("New time/date issued.");
+      setTimeout(function(){ document.location.reload(false); }, 500);   
+    }
   </script></head>
   <body>
   <h1 align = "center">System Configurations</h1><br><br>
@@ -42,9 +46,17 @@ const char index_html[] PROGMEM = R"rawliteral(
 
   <h3 align = "left">Time Setup:</h3>
   <h4 align = "center">
-      HH:MM:SS<br>
-    <form action="/get" target="hidden-form">
-      <input type="number" maxlength="2" size="2" name="Hour Value">:<input type="number" maxlength="2" size="2" name="Minute Value">:<input type="number" maxlength="2" size="2" name="Second Value">
+    <form action="/ClockCalendar" target="hidden-form">
+      <input type="time" name="Input Time">
+      <input type="submit" value="Submit" onclick="TimeCalendarMessage()">
+    </form>
+  </h4>
+  
+  <h3 align = "left">Date Setup:</h3>
+  <h4 align = "center">
+    <form action="/ClockCalendar" target="hidden-form">
+      <input type="date" name="Input Date">
+      <input type="submit" value="Submit" onclick="TimeCalendarMessage()">
     </form>
   </h4><br>
 
@@ -54,7 +66,7 @@ const char index_html[] PROGMEM = R"rawliteral(
     <a href="/stop" target="hidden-form"><button class="button">Stop</button></a>
     <br>
   <form action="/get" target="hidden-form">
-  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;>>> Set to (0 - 30): <input type="number" maxlength="2" size="4" name="JQ6500 Volume">
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;>>> Set to (0 - 30): <input type="number" name="JQ6500 Volume" min="0" max="30">
     <input type="submit" value="OK" onclick="submitMessage()">
   </form>
   <iframe style="display:none" name="hidden-form"></iframe>
