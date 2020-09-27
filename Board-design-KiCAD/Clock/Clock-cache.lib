@@ -244,6 +244,33 @@ X PA12 9 -550 -1000 100 R 50 50 1 1 B
 ENDDRAW
 ENDDEF
 #
+# Custom_SW_Push_Dual_Custom
+#
+DEF Custom_SW_Push_Dual_Custom U 0 40 Y Y 1 F N
+F0 "U" 0 -250 50 H V C CNN
+F1 "Custom_SW_Push_Dual_Custom" 0 250 50 H V C CNN
+F2 "" 0 0 50 H I C CNN
+F3 "" 0 0 50 H I C CNN
+DRAW
+C -80 -150 20 1 1 0 N
+C -80 50 20 1 1 0 N
+C 80 -150 20 1 1 0 N
+C 80 50 20 1 1 0 N
+P 2 1 1 0 0 -70 0 -90 N
+P 2 1 1 0 0 -30 0 -50 N
+P 2 1 1 0 0 -10 0 10 N
+P 2 1 1 0 0 30 0 50 N
+P 2 1 1 0 0 70 0 90 N
+P 2 1 1 0 0 100 0 170 N
+P 2 1 1 0 100 -100 -100 -100 N
+P 2 1 1 0 100 100 -100 100 N
+X 1 1 -200 -150 100 R 50 50 1 1 P
+X 1 1 -200 50 100 R 50 50 1 1 P
+X 2 2 200 -150 100 L 50 50 1 1 P
+X 2 2 200 50 100 L 50 50 1 1 P
+ENDDRAW
+ENDDEF
+#
 # Custom_SevSeg1.8Inch
 #
 DEF Custom_SevSeg1.8Inch U 0 40 Y Y 1 F N
