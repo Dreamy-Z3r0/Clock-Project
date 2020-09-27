@@ -13,13 +13,14 @@ NetworkCredentials ESP8266_AP;
 TimeData HTML_TimeInput;
 CalendarData HTML_CalendarInput;
 
+uint8_t CredentialsResetPin = 2;
+
 // Create AsyncWebServer object on port 80
 AsyncWebServer server(80);
 
 bool TEST_SOUND_REQUEST = false;
 bool CANCEL_REQUEST = false;
 
-bool WiFiCredentialsResetRequested = false;
 bool uartACTIVE = false;
 
 bool newVolumeSet = true;
@@ -84,6 +85,9 @@ String processor(const String& var)
 void setup() 
 {
   Serial.begin(115200);
+
+  pinMode(CredentialsResetPin, INPUT);
+  //attachInterrupt(digitalPinToInterrupt(CredentialsResetPin), REBOOT, FALLING);
 
   if(!SPIFFS.begin())
   {
@@ -290,6 +294,16 @@ void loop()
     newVolumeSet = true;
     uartACTIVE = false;
   }
+}
+
+void REBOOT (void)
+{
+  ESP8266_AP.NEW_AP_SSID = "Clock Config (192.168.4.1)";
+  ESP8266_AP.NEW_AP_PASSWORD = "12345678";
+  
+  ESP8266_AP.NewAPSSID = true;
+  ESP8266_AP.NewAPPassword = true;
+  ESP8266_AP.NewDataSet = false;
 }
 
 void LoadAPCredentials (void)
