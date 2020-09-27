@@ -267,40 +267,7 @@ void loop()
   if (!HTML_TimeInput.NewDataSet & !uartACTIVE)
   {
     uartACTIVE = true;
-    uint8_t receivedMessage = 'r';
-    
-    Serial.write('T');
-  
-    while ('O' != receivedMessage)
-    {
-      while (!Serial.available());
-      receivedMessage = Serial.read();
-      
-      if ('r' == receivedMessage) Serial.write('T');
-      else if ('O' == receivedMessage) Serial.write(HTML_TimeInput.HourData);
-      else Serial.write('r');
-    }
-
-    receivedMessage = 'r';
-    while ('O' != receivedMessage)
-    {
-      while (!Serial.available());
-      receivedMessage = Serial.read();
-      
-      if ('r' == receivedMessage) Serial.write(HTML_TimeInput.HourData);
-      else if ('O' == receivedMessage) Serial.write(HTML_TimeInput.MinuteData);
-      else Serial.write('r');
-    }
-
-    receivedMessage = 'r';
-    while ('O' != receivedMessage)
-    {
-      while (!Serial.available());
-      receivedMessage = Serial.read();
-      
-      if ('r' == receivedMessage) Serial.write(HTML_TimeInput.MinuteData);
-      else if ('O' != receivedMessage) Serial.write('r');
-    }
+    UART_Data_Transfer ('T', 2);
     
     HTML_TimeInput.NewDataSet = true;
     uartACTIVE = false;
@@ -309,62 +276,7 @@ void loop()
   if (!HTML_CalendarInput.NewDataSet)
   {
     uartACTIVE = true;
-    uint8_t receivedMessage = 'r';
-
-    Serial.write('D');
-
-    while ('O' != receivedMessage)
-    {
-      while (!Serial.available());
-      receivedMessage = Serial.read();
-      
-      if ('r' == receivedMessage) Serial.write('D');
-      else if ('O' == receivedMessage) Serial.write(HTML_CalendarInput.DateData);
-      else Serial.write('r');
-    } 
-
-    receivedMessage = 'r';
-    while ('O' != receivedMessage)
-    {
-      while (!Serial.available());
-      receivedMessage = Serial.read();
-      
-      if ('r' == receivedMessage) Serial.write(HTML_CalendarInput.DateData);
-      else if ('O' == receivedMessage) Serial.write(HTML_CalendarInput.MonthData);
-      else Serial.write('r');
-    } 
-
-    receivedMessage = 'r';
-    while ('O' != receivedMessage)
-    {
-      while (!Serial.available());
-      receivedMessage = Serial.read();
-      
-      if ('r' == receivedMessage) Serial.write(HTML_CalendarInput.MonthData);
-      else if ('O' == receivedMessage) Serial.write((uint8_t)((HTML_CalendarInput.YearData & 0xFF00) >> 8));
-      else Serial.write('r');
-    }
-
-    receivedMessage = 'r';
-    while ('O' != receivedMessage)
-    {
-      while (!Serial.available());
-      receivedMessage = Serial.read();
-      
-      if ('r' == receivedMessage) Serial.write((uint8_t)((HTML_CalendarInput.YearData & 0xFF00) >> 8));
-      else if ('O' == receivedMessage) Serial.write((uint8_t)(HTML_CalendarInput.YearData & 0x00FF));
-      else Serial.write('r');
-    }
-
-    receivedMessage = 'r';
-    while ('O' != receivedMessage)
-    {
-      while (!Serial.available());
-      receivedMessage = Serial.read();
-      
-      if ('r' == receivedMessage) Serial.write((uint8_t)(HTML_CalendarInput.YearData & 0x00FF));
-      else if ('O' != receivedMessage) Serial.write('r');
-    }
+    UART_Data_Transfer ('D', 4);
     
     HTML_CalendarInput.NewDataSet = true; 
     uartACTIVE = false;
@@ -373,40 +285,14 @@ void loop()
   if (!newVolumeSet & !uartACTIVE)
   {
     uartACTIVE = true;
-    uint8_t receivedMessage = 'r';
-
-    String storedVolume = readFile(SPIFFS, "/JQ6500_Volume.txt");
-    uint8_t NewVolume = StringToNumber(storedVolume, storedVolume.length());
-    
-    Serial.write('V');
-
-    receivedMessage = 'r';
-    while ('O' != receivedMessage)
-    {
-      while (!Serial.available());
-      receivedMessage = Serial.read();
-      
-      if ('r' == receivedMessage) Serial.write('V');
-      else if ('O' == receivedMessage) Serial.write(NewVolume);
-      else Serial.write('r');
-    }
-
-    receivedMessage = 'r';
-    while ('O' != receivedMessage)
-    {
-      while (!Serial.available());
-      receivedMessage = Serial.read();
-      
-      if ('r' == receivedMessage) Serial.write(NewVolume);
-      else if ('O' != receivedMessage) Serial.write('r');
-    }
+    UART_Data_Transfer ('V', 1);
     
     newVolumeSet = true;
     uartACTIVE = false;
   }
 }
 
-void LoadAPCredentials(void)
+void LoadAPCredentials (void)
 {
   String LoadedSSID = readFile(SPIFFS, "/ESP_AP_SSID.txt");
   String LoadedPassword = readFile(SPIFFS, "/ESP_AP_PASSWORD.txt");
@@ -422,7 +308,7 @@ void LoadAPCredentials(void)
     ESP8266_AP.CURRENT_AP_PASSWORD = "123456789";
 }
 
-uint8_t StringToNumber(String inputString, uint8_t inputStringLength)
+uint8_t StringToNumber (String inputString, uint8_t inputStringLength)
 {
   uint8_t outputNumber = 0;
 
@@ -440,4 +326,54 @@ uint8_t StringToNumber(String inputString, uint8_t inputStringLength)
   }
 
   return outputNumber;
+}
+
+void UART_Data_Transfer (uint8_t dataCommand, uint8_t bufferSize)
+{
+  uint8_t receivedMessage;
+  uint8_t dataBuffer[bufferSize+1];
+
+  dataBuffer[0] = dataCommand;
+  
+  if ('T' == dataCommand)
+  {
+    dataBuffer[1] = HTML_TimeInput.HourData;
+    dataBuffer[2] = HTML_TimeInput.MinuteData;
+  }
+  else if ('D' == dataCommand)
+  {
+    dataBuffer[1] = HTML_CalendarInput.DateData;
+    dataBuffer[2] = HTML_CalendarInput.MonthData;
+    dataBuffer[3] = (uint8_t)((HTML_CalendarInput.YearData & 0xFF00) >> 8);
+    dataBuffer[4] = (uint8_t)(HTML_CalendarInput.YearData & 0x00FF);
+  }
+  else if ('V' == dataCommand)
+  {
+    String storedVolume = readFile(SPIFFS, "/JQ6500_Volume.txt");  
+    dataBuffer[1] = StringToNumber(storedVolume, storedVolume.length());
+  }
+    
+  Serial.write(dataBuffer[0]);
+    
+  for (int index = 0; index <= bufferSize; index++)
+  {
+    receivedMessage = 'r';
+    while ('O' != receivedMessage)
+    {
+      while (!Serial.available());
+      receivedMessage = Serial.read();
+      
+      if (bufferSize > index)
+      {
+        if ('r' == receivedMessage) Serial.write(dataBuffer[index]);
+        else if ('O' == receivedMessage) Serial.write(dataBuffer[index+1]);
+        else Serial.write('r');
+      }
+      else
+      {
+        if ('r' == receivedMessage) Serial.write(dataBuffer[index]);
+        else if ('O' != receivedMessage) Serial.write('r');
+      }
+    }
+  }
 }
