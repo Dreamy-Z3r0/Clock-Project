@@ -11,9 +11,10 @@
 
 NetworkCredentials ESP8266_AP;
 TimeData HTML_TimeInput;
-CalendarData HTML_CalendarInput;
+CalendarData HTML_CalendarInput; 
 
 uint8_t CredentialsResetPin = 2;
+bool buttonState = HIGH;
 
 // Create AsyncWebServer object on port 80
 AsyncWebServer server(80);
@@ -86,8 +87,7 @@ void setup()
 {
   Serial.begin(115200);
 
-  pinMode(CredentialsResetPin, INPUT);
-  //attachInterrupt(digitalPinToInterrupt(CredentialsResetPin), REBOOT, FALLING);
+  pinMode(CredentialsResetPin, INPUT_PULLUP);
 
   if(!SPIFFS.begin())
   {
@@ -294,10 +294,18 @@ void loop()
     newVolumeSet = true;
     uartACTIVE = false;
   }
+
+  buttonState = digitalRead(CredentialsResetPin);
+  if (LOW == buttonState) REBOOT();
 }
 
 void REBOOT (void)
 {
+  do
+  {
+    buttonState = digitalRead(CredentialsResetPin);
+  } while (LOW == buttonState);
+  
   ESP8266_AP.NEW_AP_SSID = "Clock Config (192.168.4.1)";
   ESP8266_AP.NEW_AP_PASSWORD = "12345678";
   
