@@ -44,7 +44,9 @@ I2C_HandleTypeDef hi2c1;
 DMA_HandleTypeDef hdma_i2c1_rx;
 DMA_HandleTypeDef hdma_i2c1_tx;
 
+TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
+TIM_HandleTypeDef htim4;
 
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart3;
@@ -54,7 +56,7 @@ DMA_HandleTypeDef hdma_usart3_rx;
 DMA_HandleTypeDef hdma_usart3_tx;
 
 /* USER CODE BEGIN PV */
-uint8_t DS3231_ADDRESS = 0x68 << 1;
+uint8_t DS3231_ADDRESS = 0xD0;
 
 uint8_t data[] = {0, 47, 13, 0, 28, 9, 20};
 uint8_t BCD_data[7];
@@ -84,6 +86,8 @@ static void MX_USART1_UART_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_TIM3_Init(void);
+static void MX_TIM2_Init(void);
+static void MX_TIM4_Init(void);
 /* USER CODE BEGIN PFP */
 uint8_t bin2bcd(uint8_t bin_input);
 uint8_t bcd2bin(uint8_t bcd_input);
@@ -145,15 +149,19 @@ int main(void)
   MX_USART3_UART_Init();
   MX_I2C1_Init();
   MX_TIM3_Init();
+  MX_TIM2_Init();
+  MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+  HAL_TIM_OC_Start_IT(&htim2, TIM_CHANNEL_1);
+  HAL_TIM_OC_Start_IT(&htim4, TIM_CHANNEL_1);
 
   for (uint8_t index = 0; index < 7; index++)
   {
 	  BCD_data[index] = bin2bcd(data[index]);
   }
 
-  HAL_I2C_Mem_Write_DMA(&hi2c1, DS3231_ADDRESS, 0, 1, BCD_data, 7);
+//  HAL_I2C_Mem_Write_DMA(&hi2c1, DS3231_ADDRESS, 0x00, 1, BCD_data, 7);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -163,6 +171,8 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+//	  HAL_Delay(5000);
+//	  HAL_I2C_Mem_Read_DMA(&hi2c1, DS3231_ADDRESS, 0x00, 1, readData, 7);
   }
   /* USER CODE END 3 */
 }
@@ -240,6 +250,65 @@ static void MX_I2C1_Init(void)
 }
 
 /**
+  * @brief TIM2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM2_Init(void)
+{
+
+  /* USER CODE BEGIN TIM2_Init 0 */
+
+  /* USER CODE END TIM2_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
+
+  /* USER CODE BEGIN TIM2_Init 1 */
+
+  /* USER CODE END TIM2_Init 1 */
+  htim2.Instance = TIM2;
+  htim2.Init.Prescaler = 5;
+  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim2.Init.Period = 57600;
+  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_OC_Init(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_OC1REF;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_ACTIVE;
+  sConfigOC.Pulse = 57600;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_OC_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  __HAL_TIM_ENABLE_OCxPRELOAD(&htim2, TIM_CHANNEL_1);
+  /* USER CODE BEGIN TIM2_Init 2 */
+
+  /* USER CODE END TIM2_Init 2 */
+
+}
+
+/**
   * @brief TIM3 Initialization Function
   * @param None
   * @retval None
@@ -285,6 +354,65 @@ static void MX_TIM3_Init(void)
 
   /* USER CODE END TIM3_Init 2 */
   HAL_TIM_MspPostInit(&htim3);
+
+}
+
+/**
+  * @brief TIM4 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM4_Init(void)
+{
+
+  /* USER CODE BEGIN TIM4_Init 0 */
+
+  /* USER CODE END TIM4_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
+
+  /* USER CODE BEGIN TIM4_Init 1 */
+
+  /* USER CODE END TIM4_Init 1 */
+  htim4.Instance = TIM4;
+  htim4.Init.Prescaler = 6000;
+  htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim4.Init.Period = 60000;
+  htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim4, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_OC_Init(&htim4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_OC1REF;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim4, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_ACTIVE;
+  sConfigOC.Pulse = 60000;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_OC_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  __HAL_TIM_ENABLE_OCxPRELOAD(&htim4, TIM_CHANNEL_1);
+  /* USER CODE BEGIN TIM4_Init 2 */
+
+  /* USER CODE END TIM4_Init 2 */
 
 }
 
@@ -401,26 +529,36 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, LATCH_Pin|CLOCK_Pin|YEAR_DATA_INPUT_Pin|TIME_DATA_INPUT_Pin
-                          |DATE_DATA_INPUT_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(BUILTIN_LED_GPIO_Port, BUILTIN_LED_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOA, LATCH_Pin|CLOCK_Pin|YEAR_Pin|TIME_Pin
+                          |DATE_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, EN_DIGIT_1_Pin|EN_DIGIT_2_Pin|EN_DIGIT_3_Pin|EN_DIGIT_4_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : LATCH_Pin CLOCK_Pin YEAR_DATA_INPUT_Pin TIME_DATA_INPUT_Pin
-                           DATE_DATA_INPUT_Pin */
-  GPIO_InitStruct.Pin = LATCH_Pin|CLOCK_Pin|YEAR_DATA_INPUT_Pin|TIME_DATA_INPUT_Pin
-                          |DATE_DATA_INPUT_Pin;
+  /*Configure GPIO pin : BUILTIN_LED_Pin */
+  GPIO_InitStruct.Pin = BUILTIN_LED_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+  HAL_GPIO_Init(BUILTIN_LED_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : LATCH_Pin CLOCK_Pin YEAR_Pin TIME_Pin
+                           DATE_Pin */
+  GPIO_InitStruct.Pin = LATCH_Pin|CLOCK_Pin|YEAR_Pin|TIME_Pin
+                          |DATE_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : EN_DIGIT_1_Pin EN_DIGIT_2_Pin EN_DIGIT_3_Pin EN_DIGIT_4_Pin */
   GPIO_InitStruct.Pin = EN_DIGIT_1_Pin|EN_DIGIT_2_Pin|EN_DIGIT_3_Pin|EN_DIGIT_4_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
 }
@@ -442,7 +580,17 @@ void displayDataUpdate(uint8_t digitToUpdate)
 
 void singleDigitUpdate(void)
 {
+	HAL_GPIO_WritePin(EN_DIGIT_1_GPIO_Port, EN_DIGIT_1_Pin, RESET);
+	HAL_GPIO_WritePin(EN_DIGIT_2_GPIO_Port, EN_DIGIT_2_Pin, RESET);
+	HAL_GPIO_WritePin(EN_DIGIT_3_GPIO_Port, EN_DIGIT_3_Pin, RESET);
+	HAL_GPIO_WritePin(EN_DIGIT_4_GPIO_Port, EN_DIGIT_4_Pin, RESET);
+
 	HAL_GPIO_WritePin(LATCH_GPIO_Port, LATCH_Pin, SET);
+
+	if (1 == digitIndex) HAL_GPIO_WritePin(EN_DIGIT_1_GPIO_Port, EN_DIGIT_1_Pin, SET);
+	else if (2 == digitIndex) HAL_GPIO_WritePin(EN_DIGIT_2_GPIO_Port, EN_DIGIT_2_Pin, SET);
+	else if (3 == digitIndex) HAL_GPIO_WritePin(EN_DIGIT_3_GPIO_Port, EN_DIGIT_3_Pin, SET);
+	else if (4 == digitIndex) HAL_GPIO_WritePin(EN_DIGIT_4_GPIO_Port, EN_DIGIT_4_Pin, SET);
 
 	digitIndex += 1;
 	if (4 == digitIndex)
@@ -478,17 +626,52 @@ uint8_t bcd2bin(uint8_t bcd_input)
 	return (((bcd_input & 0xF0) >> 4) * 10) + (bcd_input & 0x0F);
 }
 
-void HAL_I2C_MemTxCpltCallback (I2C_HandleTypeDef * hi2c)
-{
-	// HAL_I2C_Mem_Write_DMA(&hi2c1, DS3231_ADDRESS, 0, 1, readData, 7);
-}
+//void HAL_I2C_MemTxCpltCallback (I2C_HandleTypeDef * hi2c)
+//{
+//	HAL_I2C_Mem_Read_DMA(&hi2c1, DS3231_ADDRESS, 0x00, 1, readData, 7);
+//}
 
 void HAL_I2C_MemRxCpltCallback (I2C_HandleTypeDef * hi2c)
 {
-	for (uint8_t index = 0; index < 7; index++)
+	// Extract year digits
+	dataOutput[0][2] = (readData[6] & 0xF0) >> 4;
+	dataOutput[0][3] =  readData[6] & 0x0F;
+
+	// Extract hour digits
+	dataOutput[1][0] = (readData[2] & 0x30) >> 4;
+	dataOutput[1][1] =  readData[2] & 0x0F;
+
+	// Extract minute digits
+	dataOutput[1][2] = (readData[1] & 0xF0) >> 4;
+	dataOutput[1][3] =  readData[1] & 0x0F;
+
+	// Extract date digits
+	dataOutput[2][0] = (readData[4] & 0xF0) >> 4;
+	dataOutput[2][1] =  readData[4] & 0x0F;
+
+	// Extract month digits
+	dataOutput[2][2] = (readData[5] & 0x10) >> 4;
+	dataOutput[2][3] =  readData[5] & 0x0F;
+
+	__NOP();
+}
+
+void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef * htim)
+{
+	if (htim == &htim2)
 	{
-		BIN_readData[index] = bcd2bin(readData[index]);
+		displayDataUpdate(digitIndex);
+		singleDigitUpdate();
 	}
+	else if (htim == &htim4)
+	{
+		HAL_I2C_Mem_Read_DMA(&hi2c1, DS3231_ADDRESS, 0x00, 1, readData, 7);
+	}
+}
+
+void HAL_I2C_ErrorCallback(I2C_HandleTypeDef * hi2c)
+{
+	__NOP();
 }
 
 /* USER CODE END 4 */
