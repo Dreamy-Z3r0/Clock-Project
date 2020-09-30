@@ -67,7 +67,8 @@ DMA_HandleTypeDef hdma_usart3_tx;
 
 	// Clock and Calendar data read from DS3231
 		uint8_t BCD_readData[7];
-		uint8_t DEC_readData[7];
+	// Storage for time data to handle alarms
+		uint8_t DEC_readData[2];
 
 	/* Storage space for display digits */
 		uint8_t dataOutput[3][4] =
@@ -187,7 +188,7 @@ int main(void)
 	  {
 		  READ_NOW = 0;
 		  HAL_GPIO_TogglePin(BUILTIN_LED_GPIO_Port, BUILTIN_LED_Pin);
-		  HAL_I2C_Mem_Read(&hi2c1, DS3231_ADDRESS, 0x00, 1, readData, 7, 1000);
+		  HAL_I2C_Mem_Read(&hi2c1, DS3231_ADDRESS, 0x00, 1, BCD_readData, 7, 1000);
 		  DATA_EXTRACTION();
 	  }
   }
@@ -658,24 +659,24 @@ uint8_t bcd2dec(uint8_t bcd_input)		// Converts number from BCD format to decima
 void DATA_EXTRACTION(void)		// Update dataOutput[][] every time data is pulled from DS3231
 {
 	// Extract year digits
-	dataOutput[0][2] = (readData[6] & 0xF0) >> 4;	// Tens digit from DS3231 year data in BCD format
-	dataOutput[0][3] =  readData[6] & 0x0F;			// Unit digit from DS3231 year data in BCD format
+	dataOutput[0][2] = (BCD_readData[6] & 0xF0) >> 4;	// Tens digit from DS3231 year data in BCD format
+	dataOutput[0][3] =  BCD_readData[6] & 0x0F;			// Unit digit from DS3231 year data in BCD format
 
 	// Extract hour digits
-	dataOutput[1][0] = (readData[2] & 0x30) >> 4;	// Tens digit from DS3231 hour data in BCD format
-	dataOutput[1][1] =  readData[2] & 0x0F;			// Unit digit from DS3231 hour data in BCD format
+	dataOutput[1][0] = (BCD_readData[2] & 0x30) >> 4;	// Tens digit from DS3231 hour data in BCD format
+	dataOutput[1][1] =  BCD_readData[2] & 0x0F;			// Unit digit from DS3231 hour data in BCD format
 
 	// Extract minute digits
-	dataOutput[1][2] = (readData[1] & 0xF0) >> 4;	// Tens digit from DS3231 minute data in BCD format
-	dataOutput[1][3] =  readData[1] & 0x0F;			// Unit digit from DS3231 minute data in BCD format
+	dataOutput[1][2] = (BCD_readData[1] & 0xF0) >> 4;	// Tens digit from DS3231 minute data in BCD format
+	dataOutput[1][3] =  BCD_readData[1] & 0x0F;			// Unit digit from DS3231 minute data in BCD format
 
 	// Extract date digits
-	dataOutput[2][0] = (readData[4] & 0xF0) >> 4;	// Tens digit from DS3231 date data in BCD format
-	dataOutput[2][1] =  readData[4] & 0x0F;			// Unit digit from DS3231 date data in BCD format
+	dataOutput[2][0] = (BCD_readData[4] & 0xF0) >> 4;	// Tens digit from DS3231 date data in BCD format
+	dataOutput[2][1] =  BCD_readData[4] & 0x0F;			// Unit digit from DS3231 date data in BCD format
 
 	// Extract month digits
-	dataOutput[2][2] = (readData[5] & 0x10) >> 4;	// Tens digit from DS3231 month data in BCD format
-	dataOutput[2][3] =  readData[5] & 0x0F;			// Unit digit from DS3231 month data in BCD format
+	dataOutput[2][2] = (BCD_readData[5] & 0x10) >> 4;	// Tens digit from DS3231 month data in BCD format
+	dataOutput[2][3] =  BCD_readData[5] & 0x0F;			// Unit digit from DS3231 month data in BCD format
 }
 
 void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef * htim)
