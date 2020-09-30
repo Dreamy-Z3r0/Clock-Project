@@ -41,8 +41,6 @@
 
 /* Private variables ---------------------------------------------------------*/
 I2C_HandleTypeDef hi2c1;
-DMA_HandleTypeDef hdma_i2c1_rx;
-DMA_HandleTypeDef hdma_i2c1_tx;
 
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
@@ -56,26 +54,40 @@ DMA_HandleTypeDef hdma_usart3_rx;
 DMA_HandleTypeDef hdma_usart3_tx;
 
 /* USER CODE BEGIN PV */
-uint8_t DS3231_ADDRESS = 0xD0;
+	// DS3231 I2C Address
+		uint8_t DS3231_ADDRESS = 0x68 << 1;
 
-uint8_t data[] = {0, 47, 13, 0, 28, 9, 20};
-uint8_t BCD_data[7];
-uint8_t readData[7];
-uint8_t BIN_readData[7];
+	// Time data to write to DS3231
+		uint8_t BCD_data_time[3];
+		_Bool newTime = 0;
 
-/* Storage space for display digits */
-uint8_t dataOutput [ 3 ] [ 4 ] =
-{
-	{ 2, 0, 0, 0 },		// YEAR
-	{ 0, 0, 0, 0 },		// TIME
-	{ 0, 1, 0, 1 }		// DATE
-};
+	// Date data to write to DS3231
+		uint8_t BCD_data_date[4];
+		_Bool newDate = 0;
 
-/* Display digit handler */
-uint8_t digitIndex = 0;
+	// Clock and Calendar data read from DS3231
+		uint8_t BCD_readData[7];
+		uint8_t DEC_readData[7];
 
-/* Alarm handler */
-_Bool alarmON = 0;
+	/* Storage space for display digits */
+		uint8_t dataOutput[3][4] =
+		{
+				{2, 0, 0, 0},		// YEAR
+				{0, 0, 0, 0},		// TIME
+				{0, 1, 0, 1}		// DATE
+		};
+
+	/* Display digit handler */
+		uint8_t digitIndex = 0;
+
+	/* Alarm handler */
+		_Bool alarmON = 0;
+
+	/* I2C read request flag */
+		_Bool READ_NOW = 0;
+
+	/* UART3 transmit/receive command */
+		uint8_t RECEIVED_MESSAGE = 0x00;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -89,31 +101,35 @@ static void MX_TIM3_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_TIM4_Init(void);
 /* USER CODE BEGIN PFP */
-uint8_t bin2bcd(uint8_t bin_input);
-uint8_t bcd2bin(uint8_t bcd_input);
+uint8_t dec2bcd(uint8_t bin_input);
+uint8_t bcd2dec(uint8_t bcd_input);
 
 void displayDataUpdate(uint8_t digitToUpdate);
 void singleDigitUpdate(void);
 void clockAlarm(void);
+
+void DATA_EXTRACTION(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-/* JQ6500 commands */
-// Volume control
-	uint8_t volumeValue = 15;	// Playback volume, 30 by default, value from 0 (minimum - mute) to 30 (maximum volume)
-	uint8_t volumeUp   [] = { 0x7E, 0x02, 0x04, 0xEF };			// Volume increment
-	uint8_t volumeDown [] = { 0x7E, 0x02, 0x05, 0xEF };			// Volume decrement
-	uint8_t setVolume  [] = { 0x7E, 0x03, 0x06, 15, 0xEF };		// Set desired volume [0, 30], 15 by default
-	uint8_t getVolume  [] = { 0x7E, 0x02, 0x43, 0xEF };			// Get current volume
-// Playback control
-	uint8_t alarmFile  [] = { 0x7E, 0x04, 0x03, 0x00, 0x01, 0xEF };		// Play the alarm at 7am / 11am / 1pm / 5pm
-	uint8_t volumeTest [] = { 0x7E, 0x04, 0x03, 0x00, 0x05, 0xEF };		// Play the test file for volume control
-	uint8_t Pause	   [] = { 0x7E, 0x02, 0x0E, 0xEF };					// Pause any playing music/sound file
-// Equaliser settings
-	uint8_t EQMode = 0;		// 0/1/2/3/4/5 for Normal/Pop/Rock/Jazz/Classic/Bass
-	uint8_t setEQMode  [] = { 0x7E, 0x03, 0x07, 0, 0xEF };		// Default equaliser mode is Normal
-	uint8_t getEQMode  [] = { 0x7E, 0x02, 0x44, 0xEF };			// Get current equaliser mode
+	/* JQ6500 commands */
+		// Volume control
+//			uint8_t volumeValue = 15;	// Playback volume, 30 by default, value from 0 (minimum - mute) to 30 (maximum volume)
+//			uint8_t volumeUp   [] = { 0x7E, 0x02, 0x04, 0xEF };			// Volume increment
+//			uint8_t volumeDown [] = { 0x7E, 0x02, 0x05, 0xEF };			// Volume decrement
+			uint8_t setVolume  [] = { 0x7E, 0x03, 0x06, 15, 0xEF };		// Set desired volume [0, 30], 15 by default
+//			uint8_t getVolume  [] = { 0x7E, 0x02, 0x43, 0xEF };			// Get current volume
+		// Playback control
+			uint8_t alarmFile  [] = { 0x7E, 0x04, 0x03, 0x00, 0x01, 0xEF };		// Play the alarm at 7am / 11am / 1pm / 5pm
+			uint8_t volumeTest [] = { 0x7E, 0x04, 0x03, 0x00, 0x05, 0xEF };		// Play the test file for volume control
+			uint8_t Pause	   [] = { 0x7E, 0x02, 0x0E, 0xEF };					// Pause any playing music/sound file
+
+	/* Storage for data from U(S)ART3 */
+		// Received data
+			uint8_t RX_BUF[5];
+		// Data to transmit
+			uint8_t UART3_TRANSMIT_MESSAGE;
 /* USER CODE END 0 */
 
 /**
@@ -152,16 +168,11 @@ int main(void)
   MX_TIM2_Init();
   MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
-  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
-  HAL_TIM_OC_Start_IT(&htim2, TIM_CHANNEL_1);
-  HAL_TIM_OC_Start_IT(&htim4, TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);		// Output PWM signal of period 2s on DP_PWM pin
+  HAL_TIM_OC_Start_IT(&htim2, TIM_CHANNEL_1);	// Enable multiplexing clock
+  HAL_TIM_OC_Start_IT(&htim4, TIM_CHANNEL_1);	// Enable DS3231 data pull clock
 
-  for (uint8_t index = 0; index < 7; index++)
-  {
-	  BCD_data[index] = bin2bcd(data[index]);
-  }
-
-//  HAL_I2C_Mem_Write_DMA(&hi2c1, DS3231_ADDRESS, 0x00, 1, BCD_data, 7);
+  HAL_UART_Receive_DMA(&huart3, RX_BUF, 5);		// Enable UART3 to listen to data/requests from ESP8266
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -171,8 +182,14 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-//	  HAL_Delay(5000);
-//	  HAL_I2C_Mem_Read_DMA(&hi2c1, DS3231_ADDRESS, 0x00, 1, readData, 7);
+
+	  if (READ_NOW)
+	  {
+		  READ_NOW = 0;
+		  HAL_GPIO_TogglePin(BUILTIN_LED_GPIO_Port, BUILTIN_LED_Pin);
+		  HAL_I2C_Mem_Read(&hi2c1, DS3231_ADDRESS, 0x00, 1, readData, 7, 1000);
+		  DATA_EXTRACTION();
+	  }
   }
   /* USER CODE END 3 */
 }
@@ -231,7 +248,7 @@ static void MX_I2C1_Init(void)
 
   /* USER CODE END I2C1_Init 1 */
   hi2c1.Instance = I2C1;
-  hi2c1.Init.ClockSpeed = 100000;
+  hi2c1.Init.ClockSpeed = 80000;
   hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
   hi2c1.Init.OwnAddress1 = 0;
   hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
@@ -504,12 +521,6 @@ static void MX_DMA_Init(void)
   /* DMA1_Channel5_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Channel5_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel5_IRQn);
-  /* DMA1_Channel6_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Channel6_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMA1_Channel6_IRQn);
-  /* DMA1_Channel7_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Channel7_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMA1_Channel7_IRQn);
 
 }
 
@@ -566,112 +577,212 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void displayDataUpdate(uint8_t digitToUpdate)
 {
-	HAL_GPIO_WritePin (LATCH_GPIO_Port, LATCH_Pin, RESET);
+	HAL_GPIO_WritePin (LATCH_GPIO_Port, LATCH_Pin, RESET);	// Pull LATCH pin LOW to push data to shift registers
 
-	for ( uint8_t index = 0; index <= 3; index++ )
+	for (uint8_t index = 0; index <= 3; index++)
 	{
-		HAL_GPIO_WritePin(CLOCK_GPIO_Port, CLOCK_Pin, RESET);
+		HAL_GPIO_WritePin(CLOCK_GPIO_Port, CLOCK_Pin, RESET);	// Prepares for next bit input by pulling CLOCK pin LOW
 		HAL_GPIO_WritePin( YEAR_GPIO_Port,  YEAR_Pin, (dataOutput[0][digitToUpdate] & (1 << index)) >> index);
 		HAL_GPIO_WritePin( TIME_GPIO_Port,  TIME_Pin, (dataOutput[1][digitToUpdate] & (1 << index)) >> index);
 		HAL_GPIO_WritePin( DATE_GPIO_Port,  DATE_Pin, (dataOutput[2][digitToUpdate] & (1 << index)) >> index);
-		HAL_GPIO_WritePin(CLOCK_GPIO_Port, CLOCK_Pin, SET);
+		HAL_GPIO_WritePin(CLOCK_GPIO_Port, CLOCK_Pin, SET);		// Shifts next input bit by pulling CLOCK pin HIGH
 	}
 }
 
 void singleDigitUpdate(void)
 {
+	// Turn off display digits
 	HAL_GPIO_WritePin(EN_DIGIT_1_GPIO_Port, EN_DIGIT_1_Pin, RESET);
 	HAL_GPIO_WritePin(EN_DIGIT_2_GPIO_Port, EN_DIGIT_2_Pin, RESET);
 	HAL_GPIO_WritePin(EN_DIGIT_3_GPIO_Port, EN_DIGIT_3_Pin, RESET);
 	HAL_GPIO_WritePin(EN_DIGIT_4_GPIO_Port, EN_DIGIT_4_Pin, RESET);
 
+	// Pull LATCH pin HIGH to update output on shift registers
 	HAL_GPIO_WritePin(LATCH_GPIO_Port, LATCH_Pin, SET);
 
+	// Turn on updated digits
 	if (1 == digitIndex) HAL_GPIO_WritePin(EN_DIGIT_1_GPIO_Port, EN_DIGIT_1_Pin, SET);
 	else if (2 == digitIndex) HAL_GPIO_WritePin(EN_DIGIT_2_GPIO_Port, EN_DIGIT_2_Pin, SET);
 	else if (3 == digitIndex) HAL_GPIO_WritePin(EN_DIGIT_3_GPIO_Port, EN_DIGIT_3_Pin, SET);
 	else if (4 == digitIndex) HAL_GPIO_WritePin(EN_DIGIT_4_GPIO_Port, EN_DIGIT_4_Pin, SET);
 
+	// Prepare multiplexing on the next digits
 	digitIndex += 1;
 	if (4 == digitIndex)
 		digitIndex = 0;
 }
 
-void clockAlarm(void)
+void clockAlarm(void)	// Handler of alarm flag and alarm request
 {
-	if (alarmON)
+	if (alarmON)	// Alarm flag is on
 	{
-		if (0 < dataOutput[1][3])
-			alarmON = 0;
+		if (0 < DEC_readData[1])	// Disable alarm flag when it's passed exact alarm time
+			alarmON = 0;	// Disable alarm flag
 	}
-	else
+	else			// Alarm flag is off
 	{
-		if ((0 == dataOutput[1][2]) & (0 == dataOutput[1][3]))
+		if ((0 == DEC_readData[1]) & (7 == dataOutput[1][1]))	// Enable alarm flag at 7:00 and 17:00
 		{
-			if (7 == dataOutput[1][1])
-				alarmON = 1;
-			else if ((1 == dataOutput[1][0]) & ((1 == dataOutput[1][2]) | (3 == dataOutput[1][2])))
-				alarmON = 1;
+			alarmON = 1;	// Enable alarm flag
+		}
+		else if ((0 == DEC_readData[1]) & ((11 == DEC_readData[2]) | (13 == DEC_readData[2])))	// Enable alarm flag at 11:00 and 13:00
+		{
+			alarmON = 1;	// Enable alarm flag
+		}
+
+		if (alarmON)	// Check if alarm flag is on at the exact alarm time
+		{
+			HAL_UART_Transmit_DMA(&huart1, alarmFile, 6);	// Request JQ6500 to play alarm audio
 		}
 	}
 }
 
-uint8_t bin2bcd(uint8_t bin_input)
+uint8_t dec2bcd(uint8_t bin_input)		// Converts number from decimal format to BCD format
 {
 	return (((bin_input / 10) << 4) | (bin_input % 10));
 }
 
-uint8_t bcd2bin(uint8_t bcd_input)
+uint8_t bcd2dec(uint8_t bcd_input)		// Converts number from BCD format to decimal format
 {
 	return (((bcd_input & 0xF0) >> 4) * 10) + (bcd_input & 0x0F);
 }
 
 //void HAL_I2C_MemTxCpltCallback (I2C_HandleTypeDef * hi2c)
 //{
-//	HAL_I2C_Mem_Read_DMA(&hi2c1, DS3231_ADDRESS, 0x00, 1, readData, 7);
+//	HAL_I2C_Mem_Read_IT(&hi2c1, DS3231_ADDRESS, 0x00, 1, readData, 7);
+//
+////	__NOP();
 //}
 
-void HAL_I2C_MemRxCpltCallback (I2C_HandleTypeDef * hi2c)
+//void HAL_I2C_MemRxCpltCallback (I2C_HandleTypeDef * hi2c)
+void DATA_EXTRACTION(void)		// Update dataOutput[][] every time data is pulled from DS3231
 {
 	// Extract year digits
-	dataOutput[0][2] = (readData[6] & 0xF0) >> 4;
-	dataOutput[0][3] =  readData[6] & 0x0F;
+	dataOutput[0][2] = (readData[6] & 0xF0) >> 4;	// Tens digit from DS3231 year data in BCD format
+	dataOutput[0][3] =  readData[6] & 0x0F;			// Unit digit from DS3231 year data in BCD format
 
 	// Extract hour digits
-	dataOutput[1][0] = (readData[2] & 0x30) >> 4;
-	dataOutput[1][1] =  readData[2] & 0x0F;
+	dataOutput[1][0] = (readData[2] & 0x30) >> 4;	// Tens digit from DS3231 hour data in BCD format
+	dataOutput[1][1] =  readData[2] & 0x0F;			// Unit digit from DS3231 hour data in BCD format
 
 	// Extract minute digits
-	dataOutput[1][2] = (readData[1] & 0xF0) >> 4;
-	dataOutput[1][3] =  readData[1] & 0x0F;
+	dataOutput[1][2] = (readData[1] & 0xF0) >> 4;	// Tens digit from DS3231 minute data in BCD format
+	dataOutput[1][3] =  readData[1] & 0x0F;			// Unit digit from DS3231 minute data in BCD format
 
 	// Extract date digits
-	dataOutput[2][0] = (readData[4] & 0xF0) >> 4;
-	dataOutput[2][1] =  readData[4] & 0x0F;
+	dataOutput[2][0] = (readData[4] & 0xF0) >> 4;	// Tens digit from DS3231 date data in BCD format
+	dataOutput[2][1] =  readData[4] & 0x0F;			// Unit digit from DS3231 date data in BCD format
 
 	// Extract month digits
-	dataOutput[2][2] = (readData[5] & 0x10) >> 4;
-	dataOutput[2][3] =  readData[5] & 0x0F;
-
-	__NOP();
+	dataOutput[2][2] = (readData[5] & 0x10) >> 4;	// Tens digit from DS3231 month data in BCD format
+	dataOutput[2][3] =  readData[5] & 0x0F;			// Unit digit from DS3231 month data in BCD format
 }
 
 void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef * htim)
 {
-	if (htim == &htim2)
+	if (htim == &htim2)			// Multiplexing with ~5ms interval
 	{
-		displayDataUpdate(digitIndex);
-		singleDigitUpdate();
+		displayDataUpdate(digitIndex);	// Push data for the next digit to be updated
+		singleDigitUpdate();			// Enable the updated digit
 	}
-	else if (htim == &htim4)
+	else if (htim == &htim4)	// Pull clock and calendar data from DS3231 every 5s
 	{
-		HAL_I2C_Mem_Read_DMA(&hi2c1, DS3231_ADDRESS, 0x00, 1, readData, 7);
+		__NOP();
 	}
 }
 
-void HAL_I2C_ErrorCallback(I2C_HandleTypeDef * hi2c)
+void HAL_UART_TxCpltCallback (UART_HandleTypeDef * huart)
 {
-	__NOP();
+	if (huart == &huart3)
+	{
+		HAL_UART_Receive_DMA(&huart3, RX_BUF, 5);	// Continue listening to data/requests from ESP8266
+	}
+}
+
+void HAL_UART_RxCpltCallback (UART_HandleTypeDef * huart)
+{
+	if (huart == &huart3)
+	{
+		_Bool dataCheck = 1;	// Validates received data from ESP8266
+		if ('T' == RX_BUF[0])	// Data received from ESP8266 is time data
+		{
+			dataCheck &= ((0 <= RX_BUF[1]) & (RX_BUF[1] <= 23));	// RX_BUF[1] should be hour value ranging from 0 to 23
+			dataCheck &= ((0 <= RX_BUF[2]) & (RX_BUF[2] <= 59));	// RX_BUF[2] should be minute value ranging from 0 to 59
+
+			if (dataCheck)	// Data is valid
+			{
+				UART3_TRANSMIT_MESSAGE = 'O';	// Feedback message is 'ACKNOWLEDGED'
+
+				BCD_data_time[0] = 0;					// Second = 0
+				BCD_data_time[1] = dec2bcd(RX_BUF[2]);	// Get minute value in BCD format to update DS3231
+				BCD_data_time[2] = dec2bcd(RX_BUF[1]);	// Get hour value in BCD format to update DS3231
+
+				newTime = 1;	// New time data has been issued
+			}
+			else			// Data received is not valid
+			{
+				UART3_TRANSMIT_MESSAGE = 'r';	// Feedback message is a request for ESP8266 to re-send data
+			}
+
+		}
+		else if ('D' == RX_BUF[0])	// Data received from ESP8266 is date data
+		{
+			dataCheck &= ((1 <= RX_BUF[1]) & (RX_BUF[1] <= 31));	// RX_BUF[1] should be date value ranging from 1 to 31
+			dataCheck &= ((1 <= RX_BUF[2]) & (RX_BUF[2] <= 12));	// RX_BUF[2] should be month value ranging from 1 to 12
+
+			uint16_t temp = (((uint16_t)RX_BUF[3]) << 8) | ((uint16_t)RX_BUF[4]);	// Acquire 16-bit year value
+			dataCheck &= ((1980 <= temp) & (temp <= 2099));			// Year value should be from 1980 to 2099 (supported by DS3231)
+
+			if (dataCheck)	// Data is valid
+			{
+				UART3_TRANSMIT_MESSAGE = 'O';	// Feedback message is 'ACKNOWLEDGED'
+
+				BCD_data_date[0] = 0;						// Day of week set to 0 for DS3231 to auto-update
+				BCD_data_date[1] = dec2bcd(RX_BUF[1]);		// Get date of month value in BCD format to update DS3231
+				BCD_data_date[2] = dec2bcd(RX_BUF[2]);		// Get month value in BCD format to update DS3231
+				BCD_data_date[3] = dec2bcd(temp - 2000);	// Get year value in BCD format to update DS3231 (Only years from 2000 to 2099 are valid)
+
+				newDate = 1;	// New date data has been issued
+			}
+			else			// Data received is not valid
+			{
+				UART3_TRANSMIT_MESSAGE = 'r';	// Feedback message is a request for ESP8266 to re-send data
+			}
+		}
+		else if ('T' == RX_BUF[0])	// Data received from ESP8266 is volume for JQ6500
+		{
+			dataCheck &= ((0 <= RX_BUF[1]) & (RX_BUF[1] <= 30));	// RX_BUF[1] should be volume value ranging from 0 to 30
+
+			if (dataCheck)	// Data is valid
+			{
+				UART3_TRANSMIT_MESSAGE = 'O';	// Feedback message is 'ACKNOWLEDGED'
+
+				setVolume[3] = RX_BUF[1];		// Update new volume to transmit buffer for UART1
+				HAL_UART_Transmit_DMA(&huart1, setVolume, 5);	// Update JQ6500 with new volume value
+			}
+			else			// Data received is not valid
+			{
+				UART3_TRANSMIT_MESSAGE = 'r';	// Feedback message is a request for ESP8266 to re-send data
+			}
+		}
+		else if ('P' == RX_BUF[0])	// ESP8266 requests playing the test sound
+		{
+			UART3_TRANSMIT_MESSAGE = 'O';	// Feedback message is 'ACKNOWLEDGED'
+			HAL_UART_Transmit_DMA(&huart1, volumeTest, 6);	// Request JQ6500 to play the test sound
+		}
+		else if ('S' == RX_BUF[0])	// ESP8266 requests stopping any playing audio file
+		{
+			UART3_TRANSMIT_MESSAGE = 'O';	// Feedback message is 'ACKNOWLEDGED'
+			HAL_UART_Transmit_DMA(&huart1, Pause, 4);	// Request JQ6500 to stop any playing audio
+		}
+		else	// Unable to recognise what kind of data/request transmitted by ESP8266
+		{
+			UART3_TRANSMIT_MESSAGE = 'r';	// Feedback message is a request for ESP8266 to re-send data
+		}
+
+		// Transmit feedback message to ESP8266
+		HAL_UART_Transmit_DMA(&huart3, &UART3_TRANSMIT_MESSAGE, 1);
+	}
 }
 
 /* USER CODE END 4 */
