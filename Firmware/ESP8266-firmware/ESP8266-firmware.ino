@@ -271,7 +271,7 @@ void loop()
   if (!HTML_TimeInput.NewDataSet & !uartACTIVE)
   {
     uartACTIVE = true;
-    UART_Data_Transfer ('T', 2);
+    UART_Data_Transfer ('T');
     
     HTML_TimeInput.NewDataSet = true;
     uartACTIVE = false;
@@ -280,7 +280,7 @@ void loop()
   if (!HTML_CalendarInput.NewDataSet)
   {
     uartACTIVE = true;
-    UART_Data_Transfer ('D', 4);
+    UART_Data_Transfer ('D');
     
     HTML_CalendarInput.NewDataSet = true; 
     uartACTIVE = false;
@@ -289,9 +289,27 @@ void loop()
   if (!newVolumeSet & !uartACTIVE)
   {
     uartACTIVE = true;
-    UART_Data_Transfer ('V', 1);
+    UART_Data_Transfer ('V');
     
     newVolumeSet = true;
+    uartACTIVE = false;
+  }
+
+  if (CANCEL_REQUEST & !uartACTIVE)
+  {
+    uartACTIVE = true;
+    UART_Data_Transfer ('S');
+    
+    CANCEL_REQUEST = false;
+    uartACTIVE = false;
+  }
+
+  if (TEST_SOUND_REQUEST & !uartACTIVE)
+  {
+    uartACTIVE = true;
+    UART_Data_Transfer ('P');
+    
+    TEST_SOUND_REQUEST = false;
     uartACTIVE = false;
   }
 
@@ -350,12 +368,11 @@ uint8_t StringToNumber (String inputString, uint8_t inputStringLength)
   return outputNumber;
 }
 
-void UART_Data_Transfer (uint8_t dataCommand, uint8_t bufferSize)
+void UART_Data_Transfer (uint8_t dataCommand)
 {
-  uint8_t receivedMessage;
-  uint8_t dataBuffer[bufferSize+1];
-
-  dataBuffer[0] = dataCommand;
+  uint8_t receivedMessage = 'r';
+  uint8_t dataBuffer[5] = {dataCommand, 0, 0, 0, 0};
+  uint8_t resendRequest[] = {'r', 0, 0, 0, 0};
   
   if ('T' == dataCommand)
   {
@@ -374,28 +391,25 @@ void UART_Data_Transfer (uint8_t dataCommand, uint8_t bufferSize)
     String storedVolume = readFile(SPIFFS, "/JQ6500_Volume.txt");  
     dataBuffer[1] = StringToNumber(storedVolume, storedVolume.length());
   }
-    
-  Serial.write(dataBuffer[0]);
-    
-  for (int index = 0; index <= bufferSize; index++)
+   
+  do
   {
-    receivedMessage = 'r';
-    while ('O' != receivedMessage)
+    if ('r' == receivedMessage)
     {
-      while (!Serial.available());
-      receivedMessage = Serial.read();
-      
-      if (bufferSize > index)
+      for(int index = 0; index < 5; index++)
       {
-        if ('r' == receivedMessage) Serial.write(dataBuffer[index]);
-        else if ('O' == receivedMessage) Serial.write(dataBuffer[index+1]);
-        else Serial.write('r');
-      }
-      else
-      {
-        if ('r' == receivedMessage) Serial.write(dataBuffer[index]);
-        else if ('O' != receivedMessage) Serial.write('r');
+        Serial.write(dataBuffer[index]);
       }
     }
-  }
+    else if ('O' != receivedMessage) 
+    {
+      for(int index = 0; index < 5; index++)
+      {
+        Serial.write(resendRequest[index]);
+      }
+    }
+    
+    while (!Serial.available());
+    receivedMessage = Serial.read();
+  } while ('O' != receivedMessage);
 }
