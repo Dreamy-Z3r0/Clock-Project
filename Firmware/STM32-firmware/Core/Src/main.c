@@ -49,9 +49,6 @@ TIM_HandleTypeDef htim4;
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart3;
 DMA_HandleTypeDef hdma_usart1_rx;
-DMA_HandleTypeDef hdma_usart1_tx;
-DMA_HandleTypeDef hdma_usart3_rx;
-DMA_HandleTypeDef hdma_usart3_tx;
 
 /* USER CODE BEGIN PV */
 	// DS3231 I2C Address
@@ -130,7 +127,7 @@ void DATA_EXTRACTION(void);
 		// Received data
 			uint8_t RX_BUF[5];
 		// Data to transmit
-			uint8_t UART3_TRANSMIT_MESSAGE;
+			uint8_t UART1_TRANSMIT_MESSAGE;
 /* USER CODE END 0 */
 
 /**
@@ -173,7 +170,7 @@ int main(void)
   HAL_TIM_OC_Start_IT(&htim2, TIM_CHANNEL_1);	// Enable multiplexing clock
   HAL_TIM_OC_Start_IT(&htim4, TIM_CHANNEL_1);	// Enable DS3231 data pull clock
 
-  HAL_UART_Receive_DMA(&huart3, RX_BUF, 5);		// Enable UART3 to listen to data/requests from ESP8266
+  HAL_UART_Receive_DMA(&huart1, RX_BUF, 5);		// Enable UART3 to listen to data/requests from ESP8266
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -347,7 +344,7 @@ static void MX_TIM3_Init(void)
   htim3.Instance = TIM3;
   htim3.Init.Prescaler = 36000;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 2000;
+  htim3.Init.Period = 64000;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
@@ -361,7 +358,7 @@ static void MX_TIM3_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 1000;
+  sConfigOC.Pulse = 32000;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
@@ -487,10 +484,10 @@ static void MX_USART3_UART_Init(void)
   huart3.Init.WordLength = UART_WORDLENGTH_8B;
   huart3.Init.StopBits = UART_STOPBITS_1;
   huart3.Init.Parity = UART_PARITY_NONE;
-  huart3.Init.Mode = UART_MODE_TX_RX;
+  huart3.Init.Mode = UART_MODE_TX;
   huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
   huart3.Init.OverSampling = UART_OVERSAMPLING_16;
-  if (HAL_UART_Init(&huart3) != HAL_OK)
+  if (HAL_HalfDuplex_Init(&huart3) != HAL_OK)
   {
     Error_Handler();
   }
@@ -510,15 +507,6 @@ static void MX_DMA_Init(void)
   __HAL_RCC_DMA1_CLK_ENABLE();
 
   /* DMA interrupt init */
-  /* DMA1_Channel2_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Channel2_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMA1_Channel2_IRQn);
-  /* DMA1_Channel3_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Channel3_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMA1_Channel3_IRQn);
-  /* DMA1_Channel4_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Channel4_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMA1_Channel4_IRQn);
   /* DMA1_Channel5_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Channel5_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel5_IRQn);
@@ -696,13 +684,14 @@ void HAL_UART_TxCpltCallback (UART_HandleTypeDef * huart)
 {
 	if (huart == &huart3)
 	{
-		HAL_UART_Receive_DMA(&huart3, RX_BUF, 5);	// Continue listening to data/requests from ESP8266
+//		HAL_UART_Receive_DMA(&huart1, RX_BUF, 5);	// Continue listening to data/requests from ESP8266
+		__NOP();
 	}
 }
 
 void HAL_UART_RxCpltCallback (UART_HandleTypeDef * huart)
 {
-	if (huart == &huart3)
+	if (huart == &huart1)
 	{
 		_Bool dataCheck = 1;	// Validates received data from ESP8266
 		if ('T' == RX_BUF[0])	// Data received from ESP8266 is time data
@@ -712,7 +701,7 @@ void HAL_UART_RxCpltCallback (UART_HandleTypeDef * huart)
 
 			if (dataCheck)	// Data is valid
 			{
-				UART3_TRANSMIT_MESSAGE = 'O';	// Feedback message is 'ACKNOWLEDGED'
+				UART1_TRANSMIT_MESSAGE = 'O';	// Feedback message is 'ACKNOWLEDGED'
 
 				BCD_data_time[0] = 0;					// Second = 0
 				BCD_data_time[1] = dec2bcd(RX_BUF[2]);	// Get minute value in BCD format to update DS3231
@@ -722,7 +711,7 @@ void HAL_UART_RxCpltCallback (UART_HandleTypeDef * huart)
 			}
 			else			// Data received is not valid
 			{
-				UART3_TRANSMIT_MESSAGE = 'r';	// Feedback message is a request for ESP8266 to re-send data
+				UART1_TRANSMIT_MESSAGE = 'r';	// Feedback message is a request for ESP8266 to re-send data
 			}
 
 		}
@@ -736,7 +725,7 @@ void HAL_UART_RxCpltCallback (UART_HandleTypeDef * huart)
 
 			if (dataCheck)	// Data is valid
 			{
-				UART3_TRANSMIT_MESSAGE = 'O';	// Feedback message is 'ACKNOWLEDGED'
+				UART1_TRANSMIT_MESSAGE = 'O';	// Feedback message is 'ACKNOWLEDGED'
 
 				BCD_data_date[0] = 0;						// Day of week set to 0 for DS3231 to auto-update
 				BCD_data_date[1] = dec2bcd(RX_BUF[1]);		// Get date of month value in BCD format to update DS3231
@@ -747,42 +736,48 @@ void HAL_UART_RxCpltCallback (UART_HandleTypeDef * huart)
 			}
 			else			// Data received is not valid
 			{
-				UART3_TRANSMIT_MESSAGE = 'r';	// Feedback message is a request for ESP8266 to re-send data
+				UART1_TRANSMIT_MESSAGE = 'r';	// Feedback message is a request for ESP8266 to re-send data
 			}
 		}
-		else if ('T' == RX_BUF[0])	// Data received from ESP8266 is volume for JQ6500
+		else if ('V' == RX_BUF[0])	// Data received from ESP8266 is volume for JQ6500
 		{
 			dataCheck &= ((0 <= RX_BUF[1]) & (RX_BUF[1] <= 30));	// RX_BUF[1] should be volume value ranging from 0 to 30
 
 			if (dataCheck)	// Data is valid
 			{
-				UART3_TRANSMIT_MESSAGE = 'O';	// Feedback message is 'ACKNOWLEDGED'
+				UART1_TRANSMIT_MESSAGE = 'O';	// Feedback message is 'ACKNOWLEDGED'
 
 				setVolume[3] = RX_BUF[1];		// Update new volume to transmit buffer for UART1
-				HAL_UART_Transmit_DMA(&huart1, setVolume, 5);	// Update JQ6500 with new volume value
+				HAL_UART_Transmit(&huart3, setVolume, 5, 500);	// Update JQ6500 with new volume value
 			}
 			else			// Data received is not valid
 			{
-				UART3_TRANSMIT_MESSAGE = 'r';	// Feedback message is a request for ESP8266 to re-send data
+				UART1_TRANSMIT_MESSAGE = 'r';	// Feedback message is a request for ESP8266 to re-send data
 			}
 		}
 		else if ('P' == RX_BUF[0])	// ESP8266 requests playing the test sound
 		{
-			UART3_TRANSMIT_MESSAGE = 'O';	// Feedback message is 'ACKNOWLEDGED'
-			HAL_UART_Transmit_DMA(&huart1, volumeTest, 6);	// Request JQ6500 to play the test sound
+			UART1_TRANSMIT_MESSAGE = 'O';	// Feedback message is 'ACKNOWLEDGED'
+			HAL_UART_Transmit(&huart3, volumeTest, 6, 500);	// Request JQ6500 to play the test sound
 		}
 		else if ('S' == RX_BUF[0])	// ESP8266 requests stopping any playing audio file
 		{
-			UART3_TRANSMIT_MESSAGE = 'O';	// Feedback message is 'ACKNOWLEDGED'
-			HAL_UART_Transmit_DMA(&huart1, Pause, 4);	// Request JQ6500 to stop any playing audio
+			UART1_TRANSMIT_MESSAGE = 'O';	// Feedback message is 'ACKNOWLEDGED'
+			HAL_UART_Transmit(&huart3, Pause, 4, 500);	// Request JQ6500 to stop any playing audio
 		}
-		else	// Unable to recognise what kind of data/request transmitted by ESP8266
+		else if ('r' == RX_BUF[0])	// Unable to recognise what kind of data/request transmitted by ESP8266
 		{
-			UART3_TRANSMIT_MESSAGE = 'r';	// Feedback message is a request for ESP8266 to re-send data
+			__NOP();
+		}
+		else
+		{
+			UART1_TRANSMIT_MESSAGE = 'r';	// Feedback message is a request for ESP8266 to re-send data
 		}
 
 		// Transmit feedback message to ESP8266
-		HAL_UART_Transmit_DMA(&huart3, &UART3_TRANSMIT_MESSAGE, 1);
+		HAL_UART_Transmit(&huart1, &UART1_TRANSMIT_MESSAGE, 1, 500);
+		// Continue listening to data/requests from ESP8266
+		HAL_UART_Receive_DMA(&huart1, RX_BUF, 5);
 	}
 }
 
