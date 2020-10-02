@@ -784,7 +784,7 @@ void HAL_UART_RxCpltCallback (UART_HandleTypeDef * huart)
 		}
 
 		// Transmit feedback message to ESP8266
-		HAL_UART_Transmit(&huart1, &UART1_TRANSMIT_MESSAGE, 1, 500);
+		HAL_UART_Transmit_DMA(&huart1, &UART1_TRANSMIT_MESSAGE, 1);
 //		// Continue listening to data/requests from ESP8266
 //		HAL_UART_Receive_DMA(&huart1, RX_BUF, 5);
 	}
