@@ -41,6 +41,8 @@
 
 /* Private variables ---------------------------------------------------------*/
 I2C_HandleTypeDef hi2c1;
+DMA_HandleTypeDef hdma_i2c1_rx;
+DMA_HandleTypeDef hdma_i2c1_tx;
 
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
@@ -49,6 +51,7 @@ TIM_HandleTypeDef htim4;
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart3;
 DMA_HandleTypeDef hdma_usart1_rx;
+DMA_HandleTypeDef hdma_usart3_tx;
 
 /* USER CODE BEGIN PV */
 	// DS3231 I2C Address
@@ -180,14 +183,6 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-
-	  if (READ_NOW)
-	  {
-		  READ_NOW = 0;
-		  HAL_GPIO_TogglePin(BUILTIN_LED_GPIO_Port, BUILTIN_LED_Pin);
-		  HAL_I2C_Mem_Read(&hi2c1, DS3231_ADDRESS, 0x00, 1, BCD_readData, 7, 1000);
-		  DATA_EXTRACTION();
-	  }
   }
   /* USER CODE END 3 */
 }
@@ -246,7 +241,7 @@ static void MX_I2C1_Init(void)
 
   /* USER CODE END I2C1_Init 1 */
   hi2c1.Instance = I2C1;
-  hi2c1.Init.ClockSpeed = 80000;
+  hi2c1.Init.ClockSpeed = 100000;
   hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
   hi2c1.Init.OwnAddress1 = 0;
   hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
@@ -487,7 +482,7 @@ static void MX_USART3_UART_Init(void)
   huart3.Init.Mode = UART_MODE_TX;
   huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
   huart3.Init.OverSampling = UART_OVERSAMPLING_16;
-  if (HAL_HalfDuplex_Init(&huart3) != HAL_OK)
+  if (HAL_UART_Init(&huart3) != HAL_OK)
   {
     Error_Handler();
   }
@@ -507,9 +502,18 @@ static void MX_DMA_Init(void)
   __HAL_RCC_DMA1_CLK_ENABLE();
 
   /* DMA interrupt init */
+  /* DMA1_Channel2_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel2_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel2_IRQn);
   /* DMA1_Channel5_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Channel5_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel5_IRQn);
+  /* DMA1_Channel6_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel6_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel6_IRQn);
+  /* DMA1_Channel7_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel7_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel7_IRQn);
 
 }
 
@@ -610,14 +614,13 @@ void clockAlarm(void)	// Handler of alarm flag and alarm request
 	}
 	else			// Alarm flag is off
 	{
-		if ((0 == DEC_readData[1]) & (7 == dataOutput[1][1]))	// Enable alarm flag at 7:00 and 17:00
-		{
-			alarmON = 1;	// Enable alarm flag
-		}
-		else if ((0 == DEC_readData[1]) & ((11 == DEC_readData[2]) | (13 == DEC_readData[2])))	// Enable alarm flag at 11:00 and 13:00
-		{
-			alarmON = 1;	// Enable alarm flag
-		}
+		// Check if current time is exactly 7:00, 11:00, 13:00, or 17:00 (neglecting seconds)
+		_Bool AlarmCondition = 1;
+		AlarmCondition &= (DEC_readData[1] == 0);
+		AlarmCondition &= ((DEC_readData[0] == 7) | (DEC_readData[0] == 11) | (DEC_readData[0] == 13) | (DEC_readData[0] == 17));
+
+		if (AlarmCondition)
+			alarmON = 1;
 
 		if (alarmON)	// Check if alarm flag is on at the exact alarm time
 		{
@@ -636,12 +639,13 @@ uint8_t bcd2dec(uint8_t bcd_input)		// Converts number from BCD format to decima
 	return (((bcd_input & 0xF0) >> 4) * 10) + (bcd_input & 0x0F);
 }
 
-//void HAL_I2C_MemTxCpltCallback (I2C_HandleTypeDef * hi2c)
-//{
+void HAL_I2C_MemRxCpltCallback (I2C_HandleTypeDef * hi2c)
+{
 //	HAL_I2C_Mem_Read_IT(&hi2c1, DS3231_ADDRESS, 0x00, 1, readData, 7);
-//
-////	__NOP();
-//}
+
+	DATA_EXTRACTION();
+	clockAlarm();
+}
 
 //void HAL_I2C_MemRxCpltCallback (I2C_HandleTypeDef * hi2c)
 void DATA_EXTRACTION(void)		// Update dataOutput[][] every time data is pulled from DS3231
@@ -665,6 +669,10 @@ void DATA_EXTRACTION(void)		// Update dataOutput[][] every time data is pulled f
 	// Extract month digits
 	dataOutput[2][2] = (BCD_readData[5] & 0x10) >> 4;	// Tens digit from DS3231 month data in BCD format
 	dataOutput[2][3] =  BCD_readData[5] & 0x0F;			// Unit digit from DS3231 month data in BCD format
+
+	// Update alarm checking storage
+	DEC_readData[0] = bcd2dec(BCD_readData[2]);		// Hour value
+	DEC_readData[1] = bcd2dec(BCD_readData[1]);		// Minute value
 }
 
 void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef * htim)
@@ -676,17 +684,18 @@ void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef * htim)
 	}
 	else if (htim == &htim4)	// Pull clock and calendar data from DS3231 every 5s
 	{
-		__NOP();
+		HAL_I2C_Mem_Read_DMA(&hi2c1, DS3231_ADDRESS, 0x00, 1, BCD_readData, 7);
 	}
 }
 
-void HAL_UART_TxCpltCallback (UART_HandleTypeDef * huart)
+void HAL_UART_TxHalfCpltCallback (UART_HandleTypeDef * huart)
 {
-	if (huart == &huart3)
+	if (huart == &huart1)
 	{
-//		HAL_UART_Receive_DMA(&huart1, RX_BUF, 5);	// Continue listening to data/requests from ESP8266
-		__NOP();
+		HAL_UART_Receive_DMA(&huart1, RX_BUF, 5);	// Continue listening to data/requests from ESP8266
 	}
+	else if (huart == &huart3)
+		__NOP();
 }
 
 void HAL_UART_RxCpltCallback (UART_HandleTypeDef * huart)
@@ -748,7 +757,7 @@ void HAL_UART_RxCpltCallback (UART_HandleTypeDef * huart)
 				UART1_TRANSMIT_MESSAGE = 'O';	// Feedback message is 'ACKNOWLEDGED'
 
 				setVolume[3] = RX_BUF[1];		// Update new volume to transmit buffer for UART1
-				HAL_UART_Transmit(&huart3, setVolume, 5, 500);	// Update JQ6500 with new volume value
+				HAL_UART_Transmit_DMA(&huart3, setVolume, 5);	// Update JQ6500 with new volume value
 			}
 			else			// Data received is not valid
 			{
@@ -758,12 +767,12 @@ void HAL_UART_RxCpltCallback (UART_HandleTypeDef * huart)
 		else if ('P' == RX_BUF[0])	// ESP8266 requests playing the test sound
 		{
 			UART1_TRANSMIT_MESSAGE = 'O';	// Feedback message is 'ACKNOWLEDGED'
-			HAL_UART_Transmit(&huart3, volumeTest, 6, 500);	// Request JQ6500 to play the test sound
+			HAL_UART_Transmit_DMA(&huart3, volumeTest, 6);	// Request JQ6500 to play the test sound
 		}
 		else if ('S' == RX_BUF[0])	// ESP8266 requests stopping any playing audio file
 		{
 			UART1_TRANSMIT_MESSAGE = 'O';	// Feedback message is 'ACKNOWLEDGED'
-			HAL_UART_Transmit(&huart3, Pause, 4, 500);	// Request JQ6500 to stop any playing audio
+			HAL_UART_Transmit_DMA(&huart3, Pause, 4);	// Request JQ6500 to stop any playing audio
 		}
 		else if ('r' == RX_BUF[0])	// Unable to recognise what kind of data/request transmitted by ESP8266
 		{
@@ -776,9 +785,11 @@ void HAL_UART_RxCpltCallback (UART_HandleTypeDef * huart)
 
 		// Transmit feedback message to ESP8266
 		HAL_UART_Transmit(&huart1, &UART1_TRANSMIT_MESSAGE, 1, 500);
-		// Continue listening to data/requests from ESP8266
-		HAL_UART_Receive_DMA(&huart1, RX_BUF, 5);
+//		// Continue listening to data/requests from ESP8266
+//		HAL_UART_Receive_DMA(&huart1, RX_BUF, 5);
 	}
+	else if (huart == &huart3)
+		__NOP();
 }
 
 /* USER CODE END 4 */
