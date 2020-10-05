@@ -22,7 +22,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "JQ6500_COMMANDS.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -51,11 +51,16 @@ TIM_HandleTypeDef htim4;
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart3;
 DMA_HandleTypeDef hdma_usart1_rx;
+DMA_HandleTypeDef hdma_usart1_tx;
 DMA_HandleTypeDef hdma_usart3_tx;
+DMA_HandleTypeDef hdma_usart3_rx;
 
 /* USER CODE BEGIN PV */
 	// DS3231 I2C Address
 		uint8_t DS3231_ADDRESS = 0x68 << 1;
+
+	/* I2C availability flag */
+		_Bool I2C_available = 1;
 
 	// Time data to write to DS3231
 		uint8_t BCD_data_time[3];
@@ -64,6 +69,9 @@ DMA_HandleTypeDef hdma_usart3_tx;
 	// Date data to write to DS3231
 		uint8_t BCD_data_date[4];
 		_Bool newDate = 0;
+
+	/* I2C read request flag <- Pull time and date data from DS3231 */
+		_Bool READ_NOW = 0;
 
 	// Clock and Calendar data read from DS3231
 		uint8_t BCD_readData[7];
@@ -78,17 +86,29 @@ DMA_HandleTypeDef hdma_usart3_tx;
 				{0, 1, 0, 1}		// DATE
 		};
 
-	/* Display digit handler */
+	// Display digit handler
 		uint8_t digitIndex = 0;
 
-	/* Alarm handler */
+	// Alarm handler
 		_Bool alarmON = 0;
+		_Bool alarmRequested = 0;
 
-	/* I2C read request flag */
-		_Bool READ_NOW = 0;
+	/* UART Busy Flag */
+		_Bool UART_available = 1;
 
-	/* UART3 transmit/receive command */
+	/* UART1 transmit/receive command */
 		uint8_t RECEIVED_MESSAGE = 0x00;
+
+	/* Storage for data from UART1 */
+		uint8_t RX_BUF[5];					// Received data
+		uint8_t UART1_TRANSMIT_MESSAGE;		// Data to transmit
+
+	/* UART data for transmission flags */
+		_Bool Feedback_Message = 0;		// Availability of feedback message for ESP8266
+		_Bool newVolume = 0;			// Availability of new volume for speaker
+		_Bool Audio_Test_Request = 0;	// Availability of audio test request for JQ6500
+		_Bool Audio_Stop = 0;			// Availability of stop request for any playing audio
+		_Bool Test_Display = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -107,30 +127,14 @@ uint8_t bcd2dec(uint8_t bcd_input);
 
 void displayDataUpdate(uint8_t digitToUpdate);
 void singleDigitUpdate(void);
-void clockAlarm(void);
 
 void DATA_EXTRACTION(void);
+void clockAlarm(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-	/* JQ6500 commands */
-		// Volume control
-//			uint8_t volumeValue = 15;	// Playback volume, 30 by default, value from 0 (minimum - mute) to 30 (maximum volume)
-//			uint8_t volumeUp   [] = { 0x7E, 0x02, 0x04, 0xEF };			// Volume increment
-//			uint8_t volumeDown [] = { 0x7E, 0x02, 0x05, 0xEF };			// Volume decrement
-			uint8_t setVolume  [] = { 0x7E, 0x03, 0x06, 15, 0xEF };		// Set desired volume [0, 30], 15 by default
-//			uint8_t getVolume  [] = { 0x7E, 0x02, 0x43, 0xEF };			// Get current volume
-		// Playback control
-			uint8_t alarmFile  [] = { 0x7E, 0x04, 0x03, 0x00, 0x01, 0xEF };		// Play the alarm at 7am / 11am / 1pm / 5pm
-			uint8_t volumeTest [] = { 0x7E, 0x04, 0x03, 0x00, 0x05, 0xEF };		// Play the test file for volume control
-			uint8_t Pause	   [] = { 0x7E, 0x02, 0x0E, 0xEF };					// Pause any playing music/sound file
 
-	/* Storage for data from U(S)ART3 */
-		// Received data
-			uint8_t RX_BUF[5];
-		// Data to transmit
-			uint8_t UART1_TRANSMIT_MESSAGE;
 /* USER CODE END 0 */
 
 /**
@@ -183,6 +187,72 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  if (I2C_available)
+	  {
+		  if (newTime)
+		  {
+			  I2C_available = 0;
+			  newTime = 0;
+			  HAL_I2C_Mem_Write_DMA(&hi2c1, DS3231_ADDRESS, 0x00, 1, BCD_data_time, 3);
+		  }
+		  else if (newDate)
+		  {
+			  I2C_available = 0;
+			  newDate = 0;
+			  HAL_I2C_Mem_Write_DMA(&hi2c1, DS3231_ADDRESS, 0x03, 1, BCD_data_date, 4);
+		  }
+		  else if (READ_NOW)
+		  {
+			  I2C_available = 0;
+			  READ_NOW = 0;
+			  HAL_I2C_Mem_Read_DMA(&hi2c1, DS3231_ADDRESS, 0x00, 1, BCD_readData, 7);
+		  }
+	  }
+
+	  if (UART_available)
+	  {
+		  if (Feedback_Message)
+		  {
+			  UART_available = 0;
+			  Feedback_Message = 0;
+			  HAL_UART_Transmit_DMA(&huart1, &UART1_TRANSMIT_MESSAGE, 1);
+		  }
+		  else if (newVolume)
+		  {
+			  UART_available = 0;
+			  newVolume = 0;
+			  HAL_UART_Transmit_DMA(&huart3, setVolume, 5);		// Update JQ6500 with new volume value
+		  }
+		  else if (Audio_Test_Request)
+		  {
+			  UART_available = 0;
+			  Audio_Test_Request = 0;
+			  HAL_UART_Transmit_DMA(&huart3, volumeTest, 6);	// Request JQ6500 to play the test sound
+		  }
+		  else if (Audio_Stop)
+		  {
+			  UART_available = 0;
+			  Audio_Stop = 0;
+			  HAL_UART_Transmit_DMA(&huart3, Pause, 4);			// Request JQ6500 to stop any playing audio
+		  }
+		  else if (Test_Display)
+		  {
+			  UART_available = 0;
+			  Test_Display = 0;
+			  HAL_UART_Transmit_DMA(&huart1, BCD_readData, 7);
+		  }
+		  else if (alarmON & !alarmRequested)
+		  {
+			  UART_available = 0;
+			  alarmRequested = 1;
+			  HAL_UART_Transmit_DMA(&huart3, alarmFile, 6);		// Request JQ6500 to play alarm audio
+		  }
+		  else
+		  {
+			  UART_available = 0;
+			  HAL_UART_Receive_DMA(&huart1, RX_BUF, 5);			// Continue listening to data/requests from ESP8266
+		  }
+	  }
   }
   /* USER CODE END 3 */
 }
@@ -479,7 +549,7 @@ static void MX_USART3_UART_Init(void)
   huart3.Init.WordLength = UART_WORDLENGTH_8B;
   huart3.Init.StopBits = UART_STOPBITS_1;
   huart3.Init.Parity = UART_PARITY_NONE;
-  huart3.Init.Mode = UART_MODE_TX;
+  huart3.Init.Mode = UART_MODE_TX_RX;
   huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
   huart3.Init.OverSampling = UART_OVERSAMPLING_16;
   if (HAL_UART_Init(&huart3) != HAL_OK)
@@ -505,6 +575,12 @@ static void MX_DMA_Init(void)
   /* DMA1_Channel2_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Channel2_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel2_IRQn);
+  /* DMA1_Channel3_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel3_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel3_IRQn);
+  /* DMA1_Channel4_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel4_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel4_IRQn);
   /* DMA1_Channel5_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Channel5_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel5_IRQn);
@@ -594,39 +670,15 @@ void singleDigitUpdate(void)
 	HAL_GPIO_WritePin(LATCH_GPIO_Port, LATCH_Pin, SET);
 
 	// Turn on updated digits
-	if (1 == digitIndex) HAL_GPIO_WritePin(EN_DIGIT_1_GPIO_Port, EN_DIGIT_1_Pin, SET);
-	else if (2 == digitIndex) HAL_GPIO_WritePin(EN_DIGIT_2_GPIO_Port, EN_DIGIT_2_Pin, SET);
-	else if (3 == digitIndex) HAL_GPIO_WritePin(EN_DIGIT_3_GPIO_Port, EN_DIGIT_3_Pin, SET);
-	else if (4 == digitIndex) HAL_GPIO_WritePin(EN_DIGIT_4_GPIO_Port, EN_DIGIT_4_Pin, SET);
+	if (0 == digitIndex) HAL_GPIO_WritePin(EN_DIGIT_1_GPIO_Port, EN_DIGIT_1_Pin, SET);
+	else if (1 == digitIndex) HAL_GPIO_WritePin(EN_DIGIT_2_GPIO_Port, EN_DIGIT_2_Pin, SET);
+	else if (2 == digitIndex) HAL_GPIO_WritePin(EN_DIGIT_3_GPIO_Port, EN_DIGIT_3_Pin, SET);
+	else if (3 == digitIndex) HAL_GPIO_WritePin(EN_DIGIT_4_GPIO_Port, EN_DIGIT_4_Pin, SET);
 
 	// Prepare multiplexing on the next digits
 	digitIndex += 1;
 	if (4 == digitIndex)
 		digitIndex = 0;
-}
-
-void clockAlarm(void)	// Handler of alarm flag and alarm request
-{
-	if (alarmON)	// Alarm flag is on
-	{
-		if (0 < DEC_readData[1])	// Disable alarm flag when it's passed exact alarm time
-			alarmON = 0;	// Disable alarm flag
-	}
-	else			// Alarm flag is off
-	{
-		// Check if current time is exactly 7:00, 11:00, 13:00, or 17:00 (neglecting seconds)
-		_Bool AlarmCondition = 1;
-		AlarmCondition &= (DEC_readData[1] == 0);
-		AlarmCondition &= ((DEC_readData[0] == 7) | (DEC_readData[0] == 11) | (DEC_readData[0] == 13) | (DEC_readData[0] == 17));
-
-		if (AlarmCondition)
-			alarmON = 1;
-
-		if (alarmON)	// Check if alarm flag is on at the exact alarm time
-		{
-			HAL_UART_Transmit_DMA(&huart1, alarmFile, 6);	// Request JQ6500 to play alarm audio
-		}
-	}
 }
 
 uint8_t dec2bcd(uint8_t bin_input)		// Converts number from decimal format to BCD format
@@ -637,14 +689,6 @@ uint8_t dec2bcd(uint8_t bin_input)		// Converts number from decimal format to BC
 uint8_t bcd2dec(uint8_t bcd_input)		// Converts number from BCD format to decimal format
 {
 	return (((bcd_input & 0xF0) >> 4) * 10) + (bcd_input & 0x0F);
-}
-
-void HAL_I2C_MemRxCpltCallback (I2C_HandleTypeDef * hi2c)
-{
-//	HAL_I2C_Mem_Read_IT(&hi2c1, DS3231_ADDRESS, 0x00, 1, readData, 7);
-
-	DATA_EXTRACTION();
-	clockAlarm();
 }
 
 //void HAL_I2C_MemRxCpltCallback (I2C_HandleTypeDef * hi2c)
@@ -673,6 +717,33 @@ void DATA_EXTRACTION(void)		// Update dataOutput[][] every time data is pulled f
 	// Update alarm checking storage
 	DEC_readData[0] = bcd2dec(BCD_readData[2]);		// Hour value
 	DEC_readData[1] = bcd2dec(BCD_readData[1]);		// Minute value
+Test_Display = 1;
+	if (!(Feedback_Message | newVolume | Audio_Test_Request | Audio_Stop))
+					UART_available = 1;
+}
+
+void clockAlarm(void)	// Handler of alarm flag and alarm request
+{
+	if (alarmON)	// Alarm flag is on
+	{
+		if (0 < DEC_readData[1])	// Disable alarm flag when it's passed exact alarm time
+			alarmON = 0;	// Disable alarm flag
+	}
+	else			// Alarm flag is off
+	{
+		// Check if current time is exactly 7:00, 11:00, 13:00, or 17:00 (neglecting seconds)
+		_Bool AlarmCondition = 1;
+		AlarmCondition &= (DEC_readData[1] == 0);
+		AlarmCondition &= ((DEC_readData[0] == 7) | (DEC_readData[0] == 11) | (DEC_readData[0] == 13) | (DEC_readData[0] == 17));
+
+		if (AlarmCondition)
+		{
+			alarmRequested = 0;
+			alarmON = 1;
+			if (!(Feedback_Message | newVolume | Audio_Test_Request | Audio_Stop | Test_Display))
+				UART_available = 1;
+		}
+	}
 }
 
 void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef * htim)
@@ -684,22 +755,33 @@ void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef * htim)
 	}
 	else if (htim == &htim4)	// Pull clock and calendar data from DS3231 every 5s
 	{
-		HAL_I2C_Mem_Read_DMA(&hi2c1, DS3231_ADDRESS, 0x00, 1, BCD_readData, 7);
+		HAL_GPIO_TogglePin(BUILTIN_LED_GPIO_Port, BUILTIN_LED_Pin);
+		READ_NOW = 1;
 	}
 }
 
-void HAL_UART_TxHalfCpltCallback (UART_HandleTypeDef * huart)
+void HAL_I2C_MemRxCpltCallback (I2C_HandleTypeDef * hi2c)
 {
-	if (huart == &huart1)
-	{
-		HAL_UART_Receive_DMA(&huart1, RX_BUF, 5);	// Continue listening to data/requests from ESP8266
-	}
-	else if (huart == &huart3)
-		__NOP();
+	DATA_EXTRACTION();
+	clockAlarm();
+
+	I2C_available = 1;
+}
+
+void HAL_I2C_MemTxCpltCallback (I2C_HandleTypeDef * hi2c)
+{
+	I2C_available = 1;
+}
+
+void HAL_UART_TxCpltCallback (UART_HandleTypeDef * huart)
+{
+	UART_available = 1;
 }
 
 void HAL_UART_RxCpltCallback (UART_HandleTypeDef * huart)
 {
+	UART_available = 1;
+
 	if (huart == &huart1)
 	{
 		_Bool dataCheck = 1;	// Validates received data from ESP8266
@@ -710,6 +792,7 @@ void HAL_UART_RxCpltCallback (UART_HandleTypeDef * huart)
 
 			if (dataCheck)	// Data is valid
 			{
+				newTime = 0;	// Force disabling availability flag to update new data
 				UART1_TRANSMIT_MESSAGE = 'O';	// Feedback message is 'ACKNOWLEDGED'
 
 				BCD_data_time[0] = 0;					// Second = 0
@@ -734,6 +817,7 @@ void HAL_UART_RxCpltCallback (UART_HandleTypeDef * huart)
 
 			if (dataCheck)	// Data is valid
 			{
+				newDate = 0;	// Force disabling availability flag to update new data
 				UART1_TRANSMIT_MESSAGE = 'O';	// Feedback message is 'ACKNOWLEDGED'
 
 				BCD_data_date[0] = 0;						// Day of week set to 0 for DS3231 to auto-update
@@ -757,7 +841,7 @@ void HAL_UART_RxCpltCallback (UART_HandleTypeDef * huart)
 				UART1_TRANSMIT_MESSAGE = 'O';	// Feedback message is 'ACKNOWLEDGED'
 
 				setVolume[3] = RX_BUF[1];		// Update new volume to transmit buffer for UART1
-				HAL_UART_Transmit_DMA(&huart3, setVolume, 5);	// Update JQ6500 with new volume value
+				newVolume = 1;		// New volume has been issued
 			}
 			else			// Data received is not valid
 			{
@@ -767,12 +851,12 @@ void HAL_UART_RxCpltCallback (UART_HandleTypeDef * huart)
 		else if ('P' == RX_BUF[0])	// ESP8266 requests playing the test sound
 		{
 			UART1_TRANSMIT_MESSAGE = 'O';	// Feedback message is 'ACKNOWLEDGED'
-			HAL_UART_Transmit_DMA(&huart3, volumeTest, 6);	// Request JQ6500 to play the test sound
+			Audio_Test_Request = 1;		// Enable test audio request flag
 		}
 		else if ('S' == RX_BUF[0])	// ESP8266 requests stopping any playing audio file
 		{
 			UART1_TRANSMIT_MESSAGE = 'O';	// Feedback message is 'ACKNOWLEDGED'
-			HAL_UART_Transmit_DMA(&huart3, Pause, 4);	// Request JQ6500 to stop any playing audio
+			Audio_Stop = 1;		// Enable audio stopping request flag
 		}
 		else if ('r' == RX_BUF[0])	// Unable to recognise what kind of data/request transmitted by ESP8266
 		{
@@ -783,10 +867,8 @@ void HAL_UART_RxCpltCallback (UART_HandleTypeDef * huart)
 			UART1_TRANSMIT_MESSAGE = 'r';	// Feedback message is a request for ESP8266 to re-send data
 		}
 
-		// Transmit feedback message to ESP8266
-		HAL_UART_Transmit_DMA(&huart1, &UART1_TRANSMIT_MESSAGE, 1);
-//		// Continue listening to data/requests from ESP8266
-//		HAL_UART_Receive_DMA(&huart1, RX_BUF, 5);
+		// Enable transmitting feedback message to ESP8266
+		Feedback_Message = 1;
 	}
 	else if (huart == &huart3)
 		__NOP();
