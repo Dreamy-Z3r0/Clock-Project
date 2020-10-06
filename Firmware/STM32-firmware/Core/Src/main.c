@@ -57,7 +57,7 @@ DMA_HandleTypeDef hdma_usart3_rx;
 
 /* USER CODE BEGIN PV */
 	// DS3231 I2C Address
-		uint8_t DS3231_ADDRESS = 0x68 << 1;
+		uint8_t DS3231_ADDRESS = 0xD0;
 
 	/* I2C availability flag */
 		_Bool I2C_available = 1;
@@ -67,8 +67,9 @@ DMA_HandleTypeDef hdma_usart3_rx;
 		_Bool newTime = 0;
 
 	// Date data to write to DS3231
-		uint8_t BCD_data_date[4];
+		uint8_t BCD_data_date[7];
 		_Bool newDate = 0;
+		uint8_t BCD_data[7];
 
 	/* I2C read request flag <- Pull time and date data from DS3231 */
 		_Bool READ_NOW = 0;
@@ -234,12 +235,6 @@ int main(void)
 			  UART_available = 0;
 			  Audio_Stop = 0;
 			  HAL_UART_Transmit_DMA(&huart3, Pause, 4);			// Request JQ6500 to stop any playing audio
-		  }
-		  else if (Test_Display)
-		  {
-			  UART_available = 0;
-			  Test_Display = 0;
-			  HAL_UART_Transmit_DMA(&huart1, BCD_readData, 7);
 		  }
 		  else if (alarmON & !alarmRequested)
 		  {
@@ -491,8 +486,8 @@ static void MX_TIM4_Init(void)
   {
     Error_Handler();
   }
-  sConfigOC.OCMode = TIM_OCMODE_ACTIVE;
-  sConfigOC.Pulse = 60000;
+  sConfigOC.OCMode = TIM_OCMODE_TOGGLE;
+  sConfigOC.Pulse = 0;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_OC_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
@@ -632,7 +627,7 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pin = BUILTIN_LED_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(BUILTIN_LED_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : LATCH_Pin CLOCK_Pin YEAR_Pin TIME_Pin
@@ -830,10 +825,12 @@ void HAL_UART_RxCpltCallback (UART_HandleTypeDef * huart)
 				newDate = 0;	// Force disabling availability flag to update new data
 				UART1_TRANSMIT_MESSAGE = 'O';	// Feedback message is 'ACKNOWLEDGED'
 
-				BCD_data_date[0] = 0;						// Day of week set to 0 for DS3231 to auto-update
 				BCD_data_date[1] = dec2bcd(RX_BUF[1]);		// Get date of month value in BCD format to update DS3231
 				BCD_data_date[2] = dec2bcd(RX_BUF[2]);		// Get month value in BCD format to update DS3231
 				BCD_data_date[3] = dec2bcd(temp - 2000);	// Get year value in BCD format to update DS3231 (Only years from 2000 to 2099 are valid)
+
+				uint8_t DoW = (RX_BUF[1]+=RX_BUF[2]<3?temp--:temp-2,23*RX_BUF[2]/9+RX_BUF[1]+4+temp/4-temp/100+temp/400)%7;
+				BCD_data_date[0] = DoW + 1;					// Day of week: 1 = Sunday, 2 = Monday, etc.
 
 				newDate = 1;	// New date data has been issued
 			}
@@ -879,6 +876,8 @@ void HAL_UART_RxCpltCallback (UART_HandleTypeDef * huart)
 
 		// Enable transmitting feedback message to ESP8266
 		Feedback_Message = 1;
+
+//		HAL_UART_Receive_DMA(&huart1, RX_BUF, 5);			// Continue listening to data/requests from ESP8266
 	}
 	else if (huart == &huart3)
 		__NOP();
