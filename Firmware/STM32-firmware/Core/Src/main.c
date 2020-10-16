@@ -109,7 +109,6 @@ DMA_HandleTypeDef hdma_usart3_rx;
 		_Bool newVolume = 0;			// Availability of new volume for speaker
 		_Bool Audio_Test_Request = 0;	// Availability of audio test request for JQ6500
 		_Bool Audio_Stop = 0;			// Availability of stop request for any playing audio
-		_Bool Test_Display = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -174,11 +173,18 @@ int main(void)
   MX_TIM2_Init();
   MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
+  // Turn off display digits
+  HAL_GPIO_WritePin(EN_DIGIT_1_GPIO_Port, EN_DIGIT_1_Pin, RESET);
+  HAL_GPIO_WritePin(EN_DIGIT_2_GPIO_Port, EN_DIGIT_2_Pin, RESET);
+  HAL_GPIO_WritePin(EN_DIGIT_3_GPIO_Port, EN_DIGIT_3_Pin, RESET);
+  HAL_GPIO_WritePin(EN_DIGIT_4_GPIO_Port, EN_DIGIT_4_Pin, RESET);
+
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);		// Output PWM signal of period 2s on DP_PWM pin
   HAL_TIM_OC_Start_IT(&htim2, TIM_CHANNEL_1);	// Enable multiplexing clock
   HAL_TIM_OC_Start_IT(&htim4, TIM_CHANNEL_1);	// Enable DS3231 data pull clock
 
-  HAL_UART_Receive_DMA(&huart1, RX_BUF, 5);		// Enable UART3 to listen to data/requests from ESP8266
+  HAL_Delay(5000);
+  HAL_UART_Receive_DMA(&huart1, RX_BUF, 5);		// Enable UART1 to listen to data/requests from ESP8266
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -665,20 +671,30 @@ void displayDataUpdate(uint8_t digitToUpdate)
 
 void singleDigitUpdate(void)
 {
-	// Turn off display digits
-	HAL_GPIO_WritePin(EN_DIGIT_1_GPIO_Port, EN_DIGIT_1_Pin, RESET);
-	HAL_GPIO_WritePin(EN_DIGIT_2_GPIO_Port, EN_DIGIT_2_Pin, RESET);
-	HAL_GPIO_WritePin(EN_DIGIT_3_GPIO_Port, EN_DIGIT_3_Pin, RESET);
-	HAL_GPIO_WritePin(EN_DIGIT_4_GPIO_Port, EN_DIGIT_4_Pin, RESET);
-
 	// Pull LATCH pin HIGH to update output on shift registers
 	HAL_GPIO_WritePin(LATCH_GPIO_Port, LATCH_Pin, SET);
 
 	// Turn on updated digits
-	if (0 == digitIndex) HAL_GPIO_WritePin(EN_DIGIT_1_GPIO_Port, EN_DIGIT_1_Pin, SET);
-	else if (1 == digitIndex) HAL_GPIO_WritePin(EN_DIGIT_2_GPIO_Port, EN_DIGIT_2_Pin, SET);
-	else if (2 == digitIndex) HAL_GPIO_WritePin(EN_DIGIT_3_GPIO_Port, EN_DIGIT_3_Pin, SET);
-	else if (3 == digitIndex) HAL_GPIO_WritePin(EN_DIGIT_4_GPIO_Port, EN_DIGIT_4_Pin, SET);
+	if (0 == digitIndex)
+	{
+		HAL_GPIO_WritePin(EN_DIGIT_4_GPIO_Port, EN_DIGIT_4_Pin, RESET);
+		HAL_GPIO_WritePin(EN_DIGIT_1_GPIO_Port, EN_DIGIT_1_Pin, SET);
+	}
+	else if (1 == digitIndex)
+	{
+		HAL_GPIO_WritePin(EN_DIGIT_1_GPIO_Port, EN_DIGIT_1_Pin, RESET);
+		HAL_GPIO_WritePin(EN_DIGIT_2_GPIO_Port, EN_DIGIT_2_Pin, SET);
+	}
+	else if (2 == digitIndex)
+	{
+		HAL_GPIO_WritePin(EN_DIGIT_2_GPIO_Port, EN_DIGIT_2_Pin, RESET);
+		HAL_GPIO_WritePin(EN_DIGIT_3_GPIO_Port, EN_DIGIT_3_Pin, SET);
+	}
+	else if (3 == digitIndex)
+	{
+		HAL_GPIO_WritePin(EN_DIGIT_3_GPIO_Port, EN_DIGIT_3_Pin, RESET);
+		HAL_GPIO_WritePin(EN_DIGIT_4_GPIO_Port, EN_DIGIT_4_Pin, SET);
+	}
 
 	// Prepare multiplexing on the next digits
 	digitIndex += 1;
@@ -722,9 +738,6 @@ void DATA_EXTRACTION(void)		// Update dataOutput[][] every time data is pulled f
 	// Update alarm checking storage
 	DEC_readData[0] = bcd2dec(BCD_readData[2]);		// Hour value
 	DEC_readData[1] = bcd2dec(BCD_readData[1]);		// Minute value
-Test_Display = 1;
-	if (!(Feedback_Message | newVolume | Audio_Test_Request | Audio_Stop))
-					UART_available = 1;
 }
 
 void clockAlarm(void)	// Handler of alarm flag and alarm request
@@ -745,7 +758,7 @@ void clockAlarm(void)	// Handler of alarm flag and alarm request
 		{
 			alarmRequested = 0;
 			alarmON = 1;
-			if (!(Feedback_Message | newVolume | Audio_Test_Request | Audio_Stop | Test_Display))
+			if (!(Feedback_Message | newVolume | Audio_Test_Request | Audio_Stop))
 				UART_available = 1;
 		}
 	}
@@ -760,13 +773,13 @@ void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef * htim)
 	}
 	else if (htim == &htim4)	// Pull clock and calendar data from DS3231 every 5s
 	{
-		HAL_GPIO_TogglePin(BUILTIN_LED_GPIO_Port, BUILTIN_LED_Pin);
 		READ_NOW = 1;
 	}
 }
 
 void HAL_I2C_MemRxCpltCallback (I2C_HandleTypeDef * hi2c)
 {
+	HAL_GPIO_TogglePin(BUILTIN_LED_GPIO_Port, BUILTIN_LED_Pin);
 	DATA_EXTRACTION();
 	clockAlarm();
 
@@ -876,8 +889,6 @@ void HAL_UART_RxCpltCallback (UART_HandleTypeDef * huart)
 
 		// Enable transmitting feedback message to ESP8266
 		Feedback_Message = 1;
-
-//		HAL_UART_Receive_DMA(&huart1, RX_BUF, 5);			// Continue listening to data/requests from ESP8266
 	}
 	else if (huart == &huart3)
 		__NOP();

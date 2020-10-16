@@ -2220,8 +2220,6 @@ Wire Wire Line
 	2800 7250 2800 7150
 Wire Wire Line
 	2800 7150 2900 7150
-NoConn ~ 2900 6900
-NoConn ~ 3800 6750
 $Comp
 L Regulator_Linear:LM1117-3.3 Regulator-3.3V1
 U 1 1 5F9A0025
@@ -2305,7 +2303,7 @@ NoConn ~ 1200 8350
 NoConn ~ 1200 8250
 NoConn ~ 1800 7800
 NoConn ~ 1800 8100
-Text GLabel 2900 6650 0    50   Input ~ 0
+Text GLabel 2600 6650 0    50   Input ~ 0
 +3.3V
 $Comp
 L Device:C Debounce1
@@ -2340,8 +2338,6 @@ F 3 "~" H 3500 7800 50  0001 C CNN
 	1    3500 7800
 	0    -1   -1   0   
 $EndComp
-Wire Wire Line
-	3700 7750 3700 7800
 Wire Wire Line
 	3700 7800 3650 7800
 Wire Wire Line
@@ -2380,7 +2376,60 @@ Wire Wire Line
 Connection ~ 3050 7800
 Text GLabel 3800 6850 2    50   Input ~ 0
 CredentialsReset
-NoConn ~ 3800 6650
+$Comp
+L Device:R_US R_PULLUP_0
+U 1 1 5F8BBFD6
+P 4050 6500
+F 0 "R_PULLUP_0" H 4118 6546 50  0000 L CNN
+F 1 "1k" H 4118 6455 50  0000 L CNN
+F 2 "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal" V 4090 6490 50  0001 C CNN
+F 3 "~" H 4050 6500 50  0001 C CNN
+	1    4050 6500
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:R_US R_PULLUP_1
+U 1 1 5F8BD297
+P 4650 6500
+F 0 "R_PULLUP_1" H 4718 6546 50  0000 L CNN
+F 1 "1k" H 4718 6455 50  0000 L CNN
+F 2 "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal" V 4690 6490 50  0001 C CNN
+F 3 "~" H 4650 6500 50  0001 C CNN
+	1    4650 6500
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3800 6650 4050 6650
+Wire Wire Line
+	3800 6750 4650 6750
+Wire Wire Line
+	4650 6750 4650 6650
+Text GLabel 3950 6250 0    50   Input ~ 0
++3.3V
+Wire Wire Line
+	3950 6250 4050 6250
+Wire Wire Line
+	4050 6250 4050 6350
+Wire Wire Line
+	4050 6250 4650 6250
+Wire Wire Line
+	4650 6250 4650 6350
+Connection ~ 4050 6250
+$Comp
+L Device:R_US R_RST
+U 1 1 5F9A1FA5
+P 2750 6900
+F 0 "R_RST" V 2650 6900 50  0000 C CNN
+F 1 "1k" V 2850 6900 50  0000 C CNN
+F 2 "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal" V 2790 6890 50  0001 C CNN
+F 3 "~" H 2750 6900 50  0001 C CNN
+	1    2750 6900
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	2600 6900 2600 6650
+Wire Wire Line
+	2600 6650 2900 6650
 Wire Bus Line
 	10000 8750 13950 8750
 Wire Bus Line
