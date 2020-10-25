@@ -19,12 +19,7 @@ bool buttonState = HIGH;
 // Create AsyncWebServer object on port 80
 AsyncWebServer server(80);
 
-bool TEST_SOUND_REQUEST = false;
-bool CANCEL_REQUEST = false;
-
 bool uartACTIVE = false;
-
-bool newVolumeSet = true;
 
 void notFound(AsyncWebServerRequest *request) {
   request->send(404, "text/plain", "Not found");
@@ -75,10 +70,6 @@ String processor(const String& var)
   else if (var == "New AP Password")
   {
     return ESP8266_AP.NEW_AP_PASSWORD;
-  }
-  else if (var == "JQ6500 Volume")
-  {
-    return readFile(SPIFFS, "/JQ6500_Volume.txt");
   }
   return String();
 }
@@ -159,17 +150,6 @@ void setup()
         MESSAGE = "No change for password.";
       }
     }
-    // GET JQ6500 Volume value on <ESP_IP>/get?JQ6500 Volume=<inputMessage>
-    else if (request->hasParam(PARAM_VOLUME)) 
-    {
-      inputMessage = request->getParam(PARAM_VOLUME)->value();
-    
-      if (String() != inputMessage)
-      {
-        writeFile(SPIFFS, "/JQ6500_Volume.txt", inputMessage.c_str());
-        newVolumeSet = false;
-      }   
-    }
     else 
     {
       MESSAGE = "No message sent";
@@ -237,17 +217,6 @@ void setup()
     request->send(200, "text/text", MESSAGE);
   });
 
-  server.on("/play", HTTP_GET, [](AsyncWebServerRequest *request)
-  {
-    TEST_SOUND_REQUEST = true;
-    CANCEL_REQUEST = false;
-    request->send(200, "text/text", "Test sound is on.");
-  });
-  server.on("/stop", HTTP_GET, [](AsyncWebServerRequest *request){
-    CANCEL_REQUEST = true;
-    TEST_SOUND_REQUEST = false;
-    request->send(200, "text/text", "Sound test is cancelled.");
-  });
   server.onNotFound(notFound);
   server.begin();
 }
@@ -283,33 +252,6 @@ void loop()
     UART_Data_Transfer ('D');
     
     HTML_CalendarInput.NewDataSet = true; 
-    uartACTIVE = false;
-  }
-
-  if (!newVolumeSet & !uartACTIVE)
-  {
-    uartACTIVE = true;
-    UART_Data_Transfer ('V');
-    
-    newVolumeSet = true;
-    uartACTIVE = false;
-  }
-
-  if (CANCEL_REQUEST & !uartACTIVE)
-  {
-    uartACTIVE = true;
-    UART_Data_Transfer ('S');
-    
-    CANCEL_REQUEST = false;
-    uartACTIVE = false;
-  }
-
-  if (TEST_SOUND_REQUEST & !uartACTIVE)
-  {
-    uartACTIVE = true;
-    UART_Data_Transfer ('P');
-    
-    TEST_SOUND_REQUEST = false;
     uartACTIVE = false;
   }
 
@@ -385,11 +327,6 @@ void UART_Data_Transfer (uint8_t dataCommand)
     dataBuffer[2] = HTML_CalendarInput.MonthData;
     dataBuffer[3] = (uint8_t)((HTML_CalendarInput.YearData & 0xFF00) >> 8);
     dataBuffer[4] = (uint8_t)(HTML_CalendarInput.YearData & 0x00FF);
-  }
-  else if ('V' == dataCommand)
-  {
-    String storedVolume = readFile(SPIFFS, "/JQ6500_Volume.txt");  
-    dataBuffer[1] = StringToNumber(storedVolume, storedVolume.length());
   }
    
   do

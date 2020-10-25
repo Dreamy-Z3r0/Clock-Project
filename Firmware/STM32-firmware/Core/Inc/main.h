@@ -50,8 +50,6 @@ extern "C" {
 
 /* USER CODE END EM */
 
-void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
-
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
 
@@ -72,8 +70,11 @@ void Error_Handler(void);
 #define TIME_GPIO_Port GPIOA
 #define DATE_Pin GPIO_PIN_5
 #define DATE_GPIO_Port GPIOA
-#define DP_PWM_Pin GPIO_PIN_6
-#define DP_PWM_GPIO_Port GPIOA
+#define DP_OUT_Pin GPIO_PIN_6
+#define DP_OUT_GPIO_Port GPIOA
+#define ESP8266_RESET_Pin GPIO_PIN_7
+#define ESP8266_RESET_GPIO_Port GPIOA
+#define ESP8266_RESET_EXTI_IRQn EXTI9_5_IRQn
 #define EN_DIGIT_1_Pin GPIO_PIN_12
 #define EN_DIGIT_1_GPIO_Port GPIOB
 #define EN_DIGIT_2_Pin GPIO_PIN_13
@@ -82,6 +83,14 @@ void Error_Handler(void);
 #define EN_DIGIT_3_GPIO_Port GPIOB
 #define EN_DIGIT_4_Pin GPIO_PIN_15
 #define EN_DIGIT_4_GPIO_Port GPIOB
+#define ALARM_PWM_Pin GPIO_PIN_8
+#define ALARM_PWM_GPIO_Port GPIOA
+#define VOLUME_TEST_Pin GPIO_PIN_11
+#define VOLUME_TEST_GPIO_Port GPIOA
+#define VOLUME_TEST_EXTI_IRQn EXTI15_10_IRQn
+#define CLK_IN_Pin GPIO_PIN_5
+#define CLK_IN_GPIO_Port GPIOB
+#define CLK_IN_EXTI_IRQn EXTI9_5_IRQn
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */

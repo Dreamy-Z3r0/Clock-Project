@@ -2300,7 +2300,6 @@ Connection ~ 1800 8500
 Wire Wire Line
 	1200 7800 1200 7900
 NoConn ~ 1200 8350
-NoConn ~ 1200 8250
 NoConn ~ 1800 7800
 NoConn ~ 1800 8100
 Text GLabel 2600 6650 0    50   Input ~ 0
@@ -2308,72 +2307,72 @@ Text GLabel 2600 6650 0    50   Input ~ 0
 $Comp
 L Device:C Debounce1
 U 1 1 5F763DEB
-P 3700 8000
-F 0 "Debounce1" H 3815 8046 50  0000 L CNN
-F 1 "10nF" H 3815 7955 50  0000 L CNN
-F 2 "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P5.00mm" H 3738 7850 50  0001 C CNN
-F 3 "~" H 3700 8000 50  0001 C CNN
-	1    3700 8000
+P 3950 7950
+F 0 "Debounce1" H 4065 7996 50  0000 L CNN
+F 1 "10nF" H 4065 7905 50  0000 L CNN
+F 2 "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P5.00mm" H 3988 7800 50  0001 C CNN
+F 3 "~" H 3950 7950 50  0001 C CNN
+	1    3950 7950
 	1    0    0    -1  
 $EndComp
 $Comp
 L power:GND #PWR0119
 U 1 1 5F765C62
-P 3700 8250
-F 0 "#PWR0119" H 3700 8000 50  0001 C CNN
-F 1 "GND" H 3705 8077 50  0000 C CNN
-F 2 "" H 3700 8250 50  0001 C CNN
-F 3 "" H 3700 8250 50  0001 C CNN
-	1    3700 8250
+P 3950 8200
+F 0 "#PWR0119" H 3950 7950 50  0001 C CNN
+F 1 "GND" H 3955 8027 50  0000 C CNN
+F 2 "" H 3950 8200 50  0001 C CNN
+F 3 "" H 3950 8200 50  0001 C CNN
+	1    3950 8200
 	1    0    0    -1  
 $EndComp
 $Comp
 L Device:R_US R_BUTTON1
 U 1 1 5F767A96
-P 3500 7800
-F 0 "R_BUTTON1" V 3600 7850 50  0000 C CNN
-F 1 "1k" V 3400 7800 50  0000 C CNN
-F 2 "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal" V 3540 7790 50  0001 C CNN
-F 3 "~" H 3500 7800 50  0001 C CNN
-	1    3500 7800
+P 3750 7750
+F 0 "R_BUTTON1" V 3850 7800 50  0000 C CNN
+F 1 "1k" V 3650 7750 50  0000 C CNN
+F 2 "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal" V 3790 7740 50  0001 C CNN
+F 3 "~" H 3750 7750 50  0001 C CNN
+	1    3750 7750
 	0    -1   -1   0   
 $EndComp
 Wire Wire Line
-	3700 7800 3650 7800
+	3950 7750 3900 7750
 Wire Wire Line
-	3700 7850 3700 7800
-Connection ~ 3700 7800
+	3950 7800 3950 7750
+Connection ~ 3950 7750
 Connection ~ 3500 5900
 Wire Wire Line
-	3700 8200 3700 8250
+	3950 8150 3950 8200
 Wire Wire Line
-	3700 8200 3700 8150
-Connection ~ 3700 8200
-Text GLabel 3750 7800 2    50   Input ~ 0
+	3950 8150 3950 8100
+Connection ~ 3950 8150
+Text GLabel 4000 7750 2    50   Input ~ 0
 CredentialsReset
 Wire Wire Line
-	3750 7800 3700 7800
+	4000 7750 3950 7750
 Wire Wire Line
-	3050 8200 3700 8200
+	3300 8150 3950 8150
 Wire Wire Line
-	3050 7800 3350 7800
+	3300 7750 3600 7750
 $Comp
 L Custom:SW_Push_Dual_Custom Credentials_Reset1
 U 1 1 5F9F281E
-P 2900 8000
-F 0 "Credentials_Reset1" V 2650 8350 50  0000 R CNN
-F 1 "SW_Push_Dual_Custom" V 2550 8400 50  0000 R CNN
-F 2 "Button_Switch_THT:SW_PUSH-12mm_Wuerth-430476085716" H 2900 8000 50  0001 C CNN
-F 3 "" H 2900 8000 50  0001 C CNN
-	1    2900 8000
+P 3150 7950
+F 0 "Credentials_Reset1" V 2900 8300 50  0000 R CNN
+F 1 "SW_Push_Dual_Custom" V 2800 8350 50  0000 R CNN
+F 2 "Button_Switch_THT:SW_PUSH-12mm_Wuerth-430476085716" H 3150 7950 50  0001 C CNN
+F 3 "" H 3150 7950 50  0001 C CNN
+	1    3150 7950
 	0    -1   -1   0   
 $EndComp
 Wire Wire Line
-	2850 8200 3050 8200
-Connection ~ 3050 8200
+	3100 8150 3300 8150
+Connection ~ 3300 8150
 Wire Wire Line
-	2850 7800 3050 7800
-Connection ~ 3050 7800
+	3100 7750 3300 7750
+Connection ~ 3300 7750
 Text GLabel 3800 6850 2    50   Input ~ 0
 CredentialsReset
 $Comp
@@ -2430,6 +2429,180 @@ Wire Wire Line
 	2600 6900 2600 6650
 Wire Wire Line
 	2600 6650 2900 6650
+Text GLabel 2400 5250 0    50   Input ~ 0
+CredentialsReset
+Text GLabel 2400 5350 0    50   Input ~ 0
+ALARM_PWM
+$Comp
+L power:GND #PWR0120
+U 1 1 5F9FE4CB
+P 1450 10300
+F 0 "#PWR0120" H 1450 10050 50  0001 C CNN
+F 1 "GND" H 1455 10127 50  0000 C CNN
+F 2 "" H 1450 10300 50  0001 C CNN
+F 3 "" H 1450 10300 50  0001 C CNN
+	1    1450 10300
+	1    0    0    -1  
+$EndComp
+Text GLabel 1250 9350 0    50   Input ~ 0
+ALARM_PWM
+Text GLabel 1450 9150 0    50   Input ~ 0
++11V
+$Comp
+L Connector:Conn_01x02_Female J1
+U 1 1 5FAC7A61
+P 2250 9450
+F 0 "J1" H 2000 9650 50  0000 L CNN
+F 1 "Conn_01x02_Female" H 2000 9550 50  0000 L CNN
+F 2 "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical" H 2250 9450 50  0001 C CNN
+F 3 "~" H 2250 9450 50  0001 C CNN
+	1    2250 9450
+	1    0    0    -1  
+$EndComp
+Text GLabel 3500 4100 2    50   Input ~ 0
+CLK_IN
+Text GLabel 1000 8250 0    50   Input ~ 0
+CLK_IN
+Wire Wire Line
+	1000 8250 1200 8250
+$Comp
+L Amplifier_Operational:LM741 U1
+U 1 1 5F935CC7
+P 1550 9450
+F 0 "U1" H 1550 9700 50  0000 L CNN
+F 1 "LM741" H 1550 9600 50  0000 L CNN
+F 2 "Package_DIP:DIP-8_W7.62mm_Socket_LongPads" H 1600 9500 50  0001 C CNN
+F 3 "http://www.ti.com/lit/ds/symlink/lm741.pdf" H 1700 9600 50  0001 C CNN
+	1    1550 9450
+	1    0    0    -1  
+$EndComp
+NoConn ~ 1550 9750
+NoConn ~ 1650 9750
+$Comp
+L Device:R_POT_US RV1
+U 1 1 5F9BBB37
+P 1950 9850
+F 0 "RV1" H 1850 9800 50  0000 R CNN
+F 1 "R_POT_US" H 1850 9900 50  0000 R CNN
+F 2 "Potentiometer_THT:Potentiometer_Piher_T-16H_Single_Horizontal" H 1950 9850 50  0001 C CNN
+F 3 "~" H 1950 9850 50  0001 C CNN
+	1    1950 9850
+	-1   0    0    1   
+$EndComp
+Wire Wire Line
+	1250 9550 1250 9850
+Wire Wire Line
+	1250 9850 1800 9850
+Wire Wire Line
+	1450 9750 1450 10000
+Wire Wire Line
+	1850 9450 1950 9450
+Wire Wire Line
+	1950 9700 1950 9450
+Connection ~ 1950 9450
+Wire Wire Line
+	1950 9450 2050 9450
+Wire Wire Line
+	1950 10000 1450 10000
+Connection ~ 1450 10000
+Wire Wire Line
+	1450 10000 1450 10300
+Wire Wire Line
+	2050 9550 2050 10000
+Wire Wire Line
+	2050 10000 1950 10000
+Connection ~ 1950 10000
+$Comp
+L Device:C Debounce2
+U 1 1 5F971AA8
+P 3950 9600
+F 0 "Debounce2" H 4065 9646 50  0000 L CNN
+F 1 "10nF" H 4065 9555 50  0000 L CNN
+F 2 "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P5.00mm" H 3988 9450 50  0001 C CNN
+F 3 "~" H 3950 9600 50  0001 C CNN
+	1    3950 9600
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR0121
+U 1 1 5F971AAE
+P 3950 9850
+F 0 "#PWR0121" H 3950 9600 50  0001 C CNN
+F 1 "GND" H 3955 9677 50  0000 C CNN
+F 2 "" H 3950 9850 50  0001 C CNN
+F 3 "" H 3950 9850 50  0001 C CNN
+	1    3950 9850
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:R_US R_BUTTON2
+U 1 1 5F971AB4
+P 3750 9400
+F 0 "R_BUTTON2" V 3850 9450 50  0000 C CNN
+F 1 "350" V 3650 9400 50  0000 C CNN
+F 2 "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal" V 3790 9390 50  0001 C CNN
+F 3 "~" H 3750 9400 50  0001 C CNN
+	1    3750 9400
+	0    -1   -1   0   
+$EndComp
+Wire Wire Line
+	3950 9400 3900 9400
+Wire Wire Line
+	3950 9450 3950 9400
+Connection ~ 3950 9400
+Text GLabel 4000 9400 2    50   Input ~ 0
+VOLUME_TEST
+Wire Wire Line
+	4000 9400 3950 9400
+$Comp
+L Connector:Conn_01x02_Female J2
+U 1 1 5F9E34AD
+P 3250 9550
+F 0 "J2" H 3150 9650 50  0000 L CNN
+F 1 "Conn_01x02_Female" H 3100 9400 50  0000 L CNN
+F 2 "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical" H 3250 9550 50  0001 C CNN
+F 3 "~" H 3250 9550 50  0001 C CNN
+	1    3250 9550
+	-1   0    0    -1  
+$EndComp
+Wire Wire Line
+	3950 9750 3950 9800
+Wire Wire Line
+	3450 9550 3450 9400
+Wire Wire Line
+	3450 9400 3600 9400
+Wire Wire Line
+	3450 9650 3450 9800
+Wire Wire Line
+	3450 9800 3950 9800
+Connection ~ 3950 9800
+Wire Wire Line
+	3950 9800 3950 9850
+Text GLabel 2400 5650 0    50   Input ~ 0
+VOLUME_TEST
+NoConn ~ 3500 3650
+NoConn ~ 3500 3750
+NoConn ~ 3500 3900
+NoConn ~ 3500 4000
+NoConn ~ 3500 4200
+NoConn ~ 3500 4300
+NoConn ~ 3500 4600
+NoConn ~ 3500 4700
+NoConn ~ 2400 5750
+NoConn ~ 2400 5900
+$Comp
+L 74xx:74HC14 INVERTER_2
+U 6 1 5FB9C1EC
+P 14250 5050
+F 0 "INVERTER_2" H 14250 5367 50  0000 C CNN
+F 1 "74HC14" H 14250 5276 50  0000 C CNN
+F 2 "Package_DIP:DIP-14_W7.62mm_Socket_LongPads" H 14250 5050 50  0001 C CNN
+F 3 "http://www.ti.com/lit/gpn/sn74HC14" H 14250 5050 50  0001 C CNN
+	6    14250 5050
+	1    0    0    -1  
+$EndComp
+NoConn ~ 13950 5050
+NoConn ~ 14550 5050
 Wire Bus Line
 	10000 8750 13950 8750
 Wire Bus Line

@@ -22,7 +22,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "JQ6500_COMMANDS.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -46,18 +46,14 @@ DMA_HandleTypeDef hdma_i2c1_tx;
 
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
-TIM_HandleTypeDef htim4;
 
 UART_HandleTypeDef huart1;
-UART_HandleTypeDef huart3;
 DMA_HandleTypeDef hdma_usart1_rx;
 DMA_HandleTypeDef hdma_usart1_tx;
-DMA_HandleTypeDef hdma_usart3_tx;
-DMA_HandleTypeDef hdma_usart3_rx;
 
 /* USER CODE BEGIN PV */
 	// DS3231 I2C Address
-		uint8_t DS3231_ADDRESS = 0xD0;
+		uint8_t DS3231_ADDRESS = 0x68 << 1;
 
 	/* I2C availability flag */
 		_Bool I2C_available = 1;
@@ -92,7 +88,6 @@ DMA_HandleTypeDef hdma_usart3_rx;
 
 	// Alarm handler
 		_Bool alarmON = 0;
-		_Bool alarmRequested = 0;
 
 	/* UART Busy Flag */
 		_Bool UART_available = 1;
@@ -106,9 +101,6 @@ DMA_HandleTypeDef hdma_usart3_rx;
 
 	/* UART data for transmission flags */
 		_Bool Feedback_Message = 0;		// Availability of feedback message for ESP8266
-		_Bool newVolume = 0;			// Availability of new volume for speaker
-		_Bool Audio_Test_Request = 0;	// Availability of audio test request for JQ6500
-		_Bool Audio_Stop = 0;			// Availability of stop request for any playing audio
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -116,11 +108,9 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
 static void MX_USART1_UART_Init(void);
-static void MX_USART3_UART_Init(void);
 static void MX_I2C1_Init(void);
-static void MX_TIM3_Init(void);
 static void MX_TIM2_Init(void);
-static void MX_TIM4_Init(void);
+static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
 uint8_t dec2bcd(uint8_t bin_input);
 uint8_t bcd2dec(uint8_t bcd_input);
@@ -134,7 +124,20 @@ void clockAlarm(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+_Bool VOLUME_TEST = 0;
+_Bool BUZZER_ON = 0;
+uint8_t EXTI_INTERRUPT_COUNTER = 0;
 
+_Bool ESP8266_RESET_FLAG = 0;
+uint8_t ESP8266_RESET_COUNTER = 0;
+
+uint16_t TIMER_PRELOAD[] = {10000, 819, 1168, 1104, 1435, 1175, 3232, 1336, 3234, 1300, 3317, 1035, 1091, 985, 1124, 1106};
+uint8_t TIMER_INDEX = 0;
+uint8_t TIMER_PRELOAD_SIZE = 0;
+
+_Bool REPEATED = 0;
+
+uint16_t COUNTER_PERIOD = 65535;
 /* USER CODE END 0 */
 
 /**
@@ -167,24 +170,30 @@ int main(void)
   MX_GPIO_Init();
   MX_DMA_Init();
   MX_USART1_UART_Init();
-  MX_USART3_UART_Init();
   MX_I2C1_Init();
-  MX_TIM3_Init();
   MX_TIM2_Init();
-  MX_TIM4_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
+  HAL_GPIO_WritePin(ALARM_PWM_GPIO_Port, ALARM_PWM_Pin, RESET);
+  HAL_GPIO_WritePin(BUILTIN_LED_GPIO_Port, BUILTIN_LED_Pin, SET);
+  TIMER_PRELOAD_SIZE = sizeof(TIMER_PRELOAD) / sizeof(TIMER_PRELOAD[0]);
+
+  // Initiate SQW at 1Hz on DS3231
+  uint8_t SQW_INIT_COMMAND = 0x00;
+  HAL_I2C_Mem_Write(&hi2c1, DS3231_ADDRESS, 0x0E, 1, &SQW_INIT_COMMAND, 1, 500);
+
   // Turn off display digits
   HAL_GPIO_WritePin(EN_DIGIT_1_GPIO_Port, EN_DIGIT_1_Pin, RESET);
   HAL_GPIO_WritePin(EN_DIGIT_2_GPIO_Port, EN_DIGIT_2_Pin, RESET);
   HAL_GPIO_WritePin(EN_DIGIT_3_GPIO_Port, EN_DIGIT_3_Pin, RESET);
   HAL_GPIO_WritePin(EN_DIGIT_4_GPIO_Port, EN_DIGIT_4_Pin, RESET);
 
-  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);		// Output PWM signal of period 2s on DP_PWM pin
-  HAL_TIM_OC_Start_IT(&htim2, TIM_CHANNEL_1);	// Enable multiplexing clock
-  HAL_TIM_OC_Start_IT(&htim4, TIM_CHANNEL_1);	// Enable DS3231 data pull clock
+  // Enable multiplexing clock
+  HAL_TIM_OC_Start_IT(&htim2, TIM_CHANNEL_1);
 
+  // Enable UART1 to listen to data/requests from ESP8266, delay to neglect any boot message from ESP8266
   HAL_Delay(5000);
-  HAL_UART_Receive_DMA(&huart1, RX_BUF, 5);		// Enable UART1 to listen to data/requests from ESP8266
+  HAL_UART_Receive_DMA(&huart1, RX_BUF, 5);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -201,6 +210,7 @@ int main(void)
 			  I2C_available = 0;
 			  newTime = 0;
 			  HAL_I2C_Mem_Write_DMA(&hi2c1, DS3231_ADDRESS, 0x00, 1, BCD_data_time, 3);
+			  alarmON = 0;
 		  }
 		  else if (newDate)
 		  {
@@ -224,35 +234,46 @@ int main(void)
 			  Feedback_Message = 0;
 			  HAL_UART_Transmit_DMA(&huart1, &UART1_TRANSMIT_MESSAGE, 1);
 		  }
-		  else if (newVolume)
-		  {
-			  UART_available = 0;
-			  newVolume = 0;
-			  HAL_UART_Transmit_DMA(&huart3, setVolume, 5);		// Update JQ6500 with new volume value
-		  }
-		  else if (Audio_Test_Request)
-		  {
-			  UART_available = 0;
-			  Audio_Test_Request = 0;
-			  HAL_UART_Transmit_DMA(&huart3, volumeTest, 6);	// Request JQ6500 to play the test sound
-		  }
-		  else if (Audio_Stop)
-		  {
-			  UART_available = 0;
-			  Audio_Stop = 0;
-			  HAL_UART_Transmit_DMA(&huart3, Pause, 4);			// Request JQ6500 to stop any playing audio
-		  }
-		  else if (alarmON & !alarmRequested)
-		  {
-			  UART_available = 0;
-			  alarmRequested = 1;
-			  HAL_UART_Transmit_DMA(&huart3, alarmFile, 6);		// Request JQ6500 to play alarm audio
-		  }
 		  else
 		  {
 			  UART_available = 0;
 			  HAL_UART_Receive_DMA(&huart1, RX_BUF, 5);			// Continue listening to data/requests from ESP8266
 		  }
+	  }
+
+	  if (VOLUME_TEST ^ BUZZER_ON)
+	  {
+		  if (VOLUME_TEST)
+		  {
+			  BUZZER_ON = 1;
+
+			  TIMER_INDEX = 0;
+			  COUNTER_PERIOD = TIMER_PRELOAD[TIMER_INDEX];
+
+			  MX_TIM3_Init();
+			  HAL_TIM_OC_Start_IT(&htim3, TIM_CHANNEL_1);
+
+			  HAL_GPIO_WritePin(ALARM_PWM_GPIO_Port, ALARM_PWM_Pin, RESET);
+			  HAL_GPIO_WritePin(BUILTIN_LED_GPIO_Port, BUILTIN_LED_Pin, SET);
+		  }
+		  else
+		  {
+			  HAL_GPIO_WritePin(ALARM_PWM_GPIO_Port, ALARM_PWM_Pin, RESET);
+			  HAL_GPIO_WritePin(BUILTIN_LED_GPIO_Port, BUILTIN_LED_Pin, SET);
+
+			  HAL_TIM_OC_Stop_IT(&htim3, TIM_CHANNEL_1);
+		  }
+	  }
+	  else if (alarmON & (255 == TIMER_INDEX))
+	  {
+		  TIMER_INDEX = 0;
+		  COUNTER_PERIOD = TIMER_PRELOAD[TIMER_INDEX];
+
+		  MX_TIM3_Init();
+		  HAL_TIM_OC_Start_IT(&htim3, TIM_CHANNEL_1);
+
+		  HAL_GPIO_WritePin(ALARM_PWM_GPIO_Port, ALARM_PWM_Pin, RESET);
+		  HAL_GPIO_WritePin(BUILTIN_LED_GPIO_Port, BUILTIN_LED_Pin, SET);
 	  }
   }
   /* USER CODE END 3 */
@@ -409,11 +430,11 @@ static void MX_TIM3_Init(void)
 
   /* USER CODE END TIM3_Init 1 */
   htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 3600;
+  htim3.Init.Prescaler = 7200;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 40000;
+  htim3.Init.Period = COUNTER_PERIOD;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
   {
     Error_Handler();
@@ -423,7 +444,7 @@ static void MX_TIM3_Init(void)
   {
     Error_Handler();
   }
-  if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
+  if (HAL_TIM_OC_Init(&htim3) != HAL_OK)
   {
     Error_Handler();
   }
@@ -433,77 +454,17 @@ static void MX_TIM3_Init(void)
   {
     Error_Handler();
   }
-  sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 20000;
+  sConfigOC.OCMode = TIM_OCMODE_ACTIVE;
+  sConfigOC.Pulse = COUNTER_PERIOD;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  if (HAL_TIM_OC_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
   {
     Error_Handler();
   }
   /* USER CODE BEGIN TIM3_Init 2 */
 
   /* USER CODE END TIM3_Init 2 */
-  HAL_TIM_MspPostInit(&htim3);
-
-}
-
-/**
-  * @brief TIM4 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_TIM4_Init(void)
-{
-
-  /* USER CODE BEGIN TIM4_Init 0 */
-
-  /* USER CODE END TIM4_Init 0 */
-
-  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
-  TIM_MasterConfigTypeDef sMasterConfig = {0};
-  TIM_OC_InitTypeDef sConfigOC = {0};
-
-  /* USER CODE BEGIN TIM4_Init 1 */
-
-  /* USER CODE END TIM4_Init 1 */
-  htim4.Instance = TIM4;
-  htim4.Init.Prescaler = 6000;
-  htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim4.Init.Period = 60000;
-  htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
-  if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  if (HAL_TIM_ConfigClockSource(&htim4, &sClockSourceConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_TIM_OC_Init(&htim4) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_OC1REF;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim4, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sConfigOC.OCMode = TIM_OCMODE_TOGGLE;
-  sConfigOC.Pulse = 0;
-  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-  if (HAL_TIM_OC_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  __HAL_TIM_ENABLE_OCxPRELOAD(&htim4, TIM_CHANNEL_1);
-  /* USER CODE BEGIN TIM4_Init 2 */
-
-  /* USER CODE END TIM4_Init 2 */
 
 }
 
@@ -541,39 +502,6 @@ static void MX_USART1_UART_Init(void)
 }
 
 /**
-  * @brief USART3 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_USART3_UART_Init(void)
-{
-
-  /* USER CODE BEGIN USART3_Init 0 */
-
-  /* USER CODE END USART3_Init 0 */
-
-  /* USER CODE BEGIN USART3_Init 1 */
-
-  /* USER CODE END USART3_Init 1 */
-  huart3.Instance = USART3;
-  huart3.Init.BaudRate = 9600;
-  huart3.Init.WordLength = UART_WORDLENGTH_8B;
-  huart3.Init.StopBits = UART_STOPBITS_1;
-  huart3.Init.Parity = UART_PARITY_NONE;
-  huart3.Init.Mode = UART_MODE_TX_RX;
-  huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart3.Init.OverSampling = UART_OVERSAMPLING_16;
-  if (HAL_UART_Init(&huart3) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN USART3_Init 2 */
-
-  /* USER CODE END USART3_Init 2 */
-
-}
-
-/**
   * Enable DMA controller clock
   */
 static void MX_DMA_Init(void)
@@ -583,12 +511,6 @@ static void MX_DMA_Init(void)
   __HAL_RCC_DMA1_CLK_ENABLE();
 
   /* DMA interrupt init */
-  /* DMA1_Channel2_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Channel2_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMA1_Channel2_IRQn);
-  /* DMA1_Channel3_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Channel3_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMA1_Channel3_IRQn);
   /* DMA1_Channel4_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Channel4_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel4_IRQn);
@@ -624,7 +546,7 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, LATCH_Pin|CLOCK_Pin|YEAR_Pin|TIME_Pin
-                          |DATE_Pin, GPIO_PIN_RESET);
+                          |DATE_Pin|DP_OUT_Pin|ALARM_PWM_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, EN_DIGIT_1_Pin|EN_DIGIT_2_Pin|EN_DIGIT_3_Pin|EN_DIGIT_4_Pin, GPIO_PIN_RESET);
@@ -645,12 +567,44 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
+  /*Configure GPIO pins : DP_OUT_Pin ALARM_PWM_Pin */
+  GPIO_InitStruct.Pin = DP_OUT_Pin|ALARM_PWM_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : ESP8266_RESET_Pin */
+  GPIO_InitStruct.Pin = ESP8266_RESET_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(ESP8266_RESET_GPIO_Port, &GPIO_InitStruct);
+
   /*Configure GPIO pins : EN_DIGIT_1_Pin EN_DIGIT_2_Pin EN_DIGIT_3_Pin EN_DIGIT_4_Pin */
   GPIO_InitStruct.Pin = EN_DIGIT_1_Pin|EN_DIGIT_2_Pin|EN_DIGIT_3_Pin|EN_DIGIT_4_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : VOLUME_TEST_Pin */
+  GPIO_InitStruct.Pin = VOLUME_TEST_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(VOLUME_TEST_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : CLK_IN_Pin */
+  GPIO_InitStruct.Pin = CLK_IN_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(CLK_IN_GPIO_Port, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
 }
 
@@ -712,7 +666,6 @@ uint8_t bcd2dec(uint8_t bcd_input)		// Converts number from BCD format to decima
 	return (((bcd_input & 0xF0) >> 4) * 10) + (bcd_input & 0x0F);
 }
 
-//void HAL_I2C_MemRxCpltCallback (I2C_HandleTypeDef * hi2c)
 void DATA_EXTRACTION(void)		// Update dataOutput[][] every time data is pulled from DS3231
 {
 	// Extract year digits
@@ -742,25 +695,24 @@ void DATA_EXTRACTION(void)		// Update dataOutput[][] every time data is pulled f
 
 void clockAlarm(void)	// Handler of alarm flag and alarm request
 {
-	if (alarmON)	// Alarm flag is on
-	{
-		if (0 < DEC_readData[1])	// Disable alarm flag when it's passed exact alarm time
-			alarmON = 0;	// Disable alarm flag
-	}
-	else			// Alarm flag is off
-	{
-		// Check if current time is exactly 7:00, 11:00, 13:00, or 17:00 (neglecting seconds)
-		_Bool AlarmCondition = 1;
-		AlarmCondition &= (DEC_readData[1] == 0);
-		AlarmCondition &= ((DEC_readData[0] == 7) | (DEC_readData[0] == 11) | (DEC_readData[0] == 13) | (DEC_readData[0] == 17));
+	// Check if current time is exactly 7:00, 11:00, 13:00, or 17:00 (neglecting seconds)
+	_Bool AlarmCondition = 1;
+	AlarmCondition &= (DEC_readData[1] == 0);
+	AlarmCondition &= (((BCD_readData[2] & 0x0F) == 7) | (DEC_readData[0] == 11) | (DEC_readData[0] == 13));
 
-		if (AlarmCondition)
+	if (AlarmCondition) 	// Current time is 7:00, 11:00, 13:00, or 17:00
+	{
+		if ((!alarmON) & (!VOLUME_TEST))	// Alarm is off and volume test condition is FALSE
 		{
-			alarmRequested = 0;
+			// Enable alarm
 			alarmON = 1;
-			if (!(Feedback_Message | newVolume | Audio_Test_Request | Audio_Stop))
-				UART_available = 1;
+			TIMER_INDEX = 255;
+			REPEATED = 0;
 		}
+	}
+	else if (alarmON)		// Current time has passed alarm point
+	{
+		alarmON = 0;	// Disable alarm flag
 	}
 }
 
@@ -771,15 +723,100 @@ void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef * htim)
 		displayDataUpdate(digitIndex);	// Push data for the next digit to be updated
 		singleDigitUpdate();			// Enable the updated digit
 	}
-	else if (htim == &htim4)	// Pull clock and calendar data from DS3231 every 5s
+	else if (htim == &htim3)
 	{
-		READ_NOW = 1;
+		TIMER_INDEX += 1;
+		if (TIMER_PRELOAD_SIZE > TIMER_INDEX)
+		{
+			HAL_GPIO_TogglePin(ALARM_PWM_GPIO_Port, ALARM_PWM_Pin);
+			HAL_GPIO_TogglePin(BUILTIN_LED_GPIO_Port, BUILTIN_LED_Pin);
+			COUNTER_PERIOD = TIMER_PRELOAD[TIMER_INDEX];
+
+			MX_TIM3_Init();
+			HAL_TIM_OC_Start_IT(&htim3, TIM_CHANNEL_1);
+		}
+		else if (VOLUME_TEST)
+		{
+			HAL_GPIO_WritePin(ALARM_PWM_GPIO_Port, ALARM_PWM_Pin, RESET);
+			HAL_GPIO_WritePin(BUILTIN_LED_GPIO_Port, BUILTIN_LED_Pin, SET);
+
+			TIMER_INDEX = 0;
+			COUNTER_PERIOD = TIMER_PRELOAD[TIMER_INDEX];
+
+			MX_TIM3_Init();
+			HAL_TIM_OC_Start_IT(&htim3, TIM_CHANNEL_1);
+		}
+		else if (!REPEATED)
+		{
+			HAL_GPIO_WritePin(ALARM_PWM_GPIO_Port, ALARM_PWM_Pin, RESET);
+			HAL_GPIO_WritePin(BUILTIN_LED_GPIO_Port, BUILTIN_LED_Pin, SET);
+
+			REPEATED = 1;
+			TIMER_INDEX = 0;
+			COUNTER_PERIOD = TIMER_PRELOAD[TIMER_INDEX];
+
+			MX_TIM3_Init();
+			HAL_TIM_OC_Start_IT(&htim3, TIM_CHANNEL_1);
+		}
+		else
+		{
+			HAL_GPIO_WritePin(ALARM_PWM_GPIO_Port, ALARM_PWM_Pin, RESET);
+			HAL_GPIO_WritePin(BUILTIN_LED_GPIO_Port, BUILTIN_LED_Pin, SET);
+			HAL_TIM_OC_Stop_IT(&htim3, TIM_CHANNEL_1);
+		}
+	}
+}
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+	if (GPIO_Pin == CLK_IN_Pin)
+	{
+		HAL_GPIO_TogglePin(DP_OUT_GPIO_Port, DP_OUT_Pin);
+		EXTI_INTERRUPT_COUNTER += 1;
+
+		if (5 == EXTI_INTERRUPT_COUNTER)	// Pull clock and calendar data from DS3231 every 5s
+		{
+			EXTI_INTERRUPT_COUNTER = 0;		// Reset counter
+			READ_NOW = 1;					// Enable read flag
+		}
+
+		if (ESP8266_RESET_FLAG)
+		{
+			ESP8266_RESET_COUNTER += 1;
+
+			if (5 == ESP8266_RESET_COUNTER)
+			{
+				ESP8266_RESET_FLAG = 0;
+				HAL_UART_DMAResume(&huart1);
+			}
+		}
+	}
+	else if (GPIO_Pin == ESP8266_RESET_Pin)
+	{
+		HAL_UART_DMAPause(&huart1);
+		ESP8266_RESET_COUNTER = 0;
+		ESP8266_RESET_FLAG = 1;
+	}
+	else if (GPIO_Pin == VOLUME_TEST_Pin)
+	{
+		if (VOLUME_TEST)
+		{
+			VOLUME_TEST = 0;
+		}
+		else
+		{
+			VOLUME_TEST = 1;
+			BUZZER_ON = 0;
+		}
+	}
+	else
+	{
+		__NOP();
 	}
 }
 
 void HAL_I2C_MemRxCpltCallback (I2C_HandleTypeDef * hi2c)
 {
-	HAL_GPIO_TogglePin(BUILTIN_LED_GPIO_Port, BUILTIN_LED_Pin);
 	DATA_EXTRACTION();
 	clockAlarm();
 
@@ -852,32 +889,6 @@ void HAL_UART_RxCpltCallback (UART_HandleTypeDef * huart)
 				UART1_TRANSMIT_MESSAGE = 'r';	// Feedback message is a request for ESP8266 to re-send data
 			}
 		}
-		else if ('V' == RX_BUF[0])	// Data received from ESP8266 is volume for JQ6500
-		{
-			dataCheck &= ((0 <= RX_BUF[1]) & (RX_BUF[1] <= 30));	// RX_BUF[1] should be volume value ranging from 0 to 30
-
-			if (dataCheck)	// Data is valid
-			{
-				UART1_TRANSMIT_MESSAGE = 'O';	// Feedback message is 'ACKNOWLEDGED'
-
-				setVolume[3] = RX_BUF[1];		// Update new volume to transmit buffer for UART1
-				newVolume = 1;		// New volume has been issued
-			}
-			else			// Data received is not valid
-			{
-				UART1_TRANSMIT_MESSAGE = 'r';	// Feedback message is a request for ESP8266 to re-send data
-			}
-		}
-		else if ('P' == RX_BUF[0])	// ESP8266 requests playing the test sound
-		{
-			UART1_TRANSMIT_MESSAGE = 'O';	// Feedback message is 'ACKNOWLEDGED'
-			Audio_Test_Request = 1;		// Enable test audio request flag
-		}
-		else if ('S' == RX_BUF[0])	// ESP8266 requests stopping any playing audio file
-		{
-			UART1_TRANSMIT_MESSAGE = 'O';	// Feedback message is 'ACKNOWLEDGED'
-			Audio_Stop = 1;		// Enable audio stopping request flag
-		}
 		else if ('r' == RX_BUF[0])	// Unable to recognise what kind of data/request transmitted by ESP8266
 		{
 			__NOP();
@@ -890,8 +901,6 @@ void HAL_UART_RxCpltCallback (UART_HandleTypeDef * huart)
 		// Enable transmitting feedback message to ESP8266
 		Feedback_Message = 1;
 	}
-	else if (huart == &huart3)
-		__NOP();
 }
 
 /* USER CODE END 4 */
