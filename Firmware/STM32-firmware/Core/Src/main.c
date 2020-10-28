@@ -847,10 +847,10 @@ void HAL_UART_RxCpltCallback (UART_HandleTypeDef * huart)
 
 			if (dataCheck)	// Data is valid
 			{
-				newTime = 0;	// Force disabling availability flag to update new data
+				newTime = 10;	// Force disabling availability flag to update new data
 				UART1_TRANSMIT_MESSAGE = 'O';	// Feedback message is 'ACKNOWLEDGED'
 
-				BCD_data_time[0] = 0;					// Second = 0
+				BCD_data_time[0] = 55;					// Second = 10
 				BCD_data_time[1] = dec2bcd(RX_BUF[2]);	// Get minute value in BCD format to update DS3231
 				BCD_data_time[2] = dec2bcd(RX_BUF[1]);	// Get hour value in BCD format to update DS3231
 
