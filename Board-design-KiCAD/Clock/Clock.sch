@@ -2310,7 +2310,7 @@ U 1 1 5F763DEB
 P 3950 7950
 F 0 "Debounce1" H 4065 7996 50  0000 L CNN
 F 1 "10nF" H 4065 7905 50  0000 L CNN
-F 2 "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P5.00mm" H 3988 7800 50  0001 C CNN
+F 2 "Custom:CP_Radial_H15.0mm_W14.0mm_T8.0mm_P8.5mm_Horizontal" H 3988 7800 50  0001 C CNN
 F 3 "~" H 3950 7950 50  0001 C CNN
 	1    3950 7950
 	1    0    0    -1  
@@ -2318,61 +2318,44 @@ $EndComp
 $Comp
 L power:GND #PWR0119
 U 1 1 5F765C62
-P 3950 8200
-F 0 "#PWR0119" H 3950 7950 50  0001 C CNN
-F 1 "GND" H 3955 8027 50  0000 C CNN
-F 2 "" H 3950 8200 50  0001 C CNN
-F 3 "" H 3950 8200 50  0001 C CNN
-	1    3950 8200
+P 3550 8400
+F 0 "#PWR0119" H 3550 8150 50  0001 C CNN
+F 1 "GND" H 3555 8227 50  0000 C CNN
+F 2 "" H 3550 8400 50  0001 C CNN
+F 3 "" H 3550 8400 50  0001 C CNN
+	1    3550 8400
 	1    0    0    -1  
 $EndComp
 $Comp
 L Device:R_US R_BUTTON1
 U 1 1 5F767A96
-P 3750 7750
-F 0 "R_BUTTON1" V 3850 7800 50  0000 C CNN
-F 1 "1k" V 3650 7750 50  0000 C CNN
-F 2 "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal" V 3790 7740 50  0001 C CNN
-F 3 "~" H 3750 7750 50  0001 C CNN
-	1    3750 7750
+P 3800 8150
+F 0 "R_BUTTON1" V 3687 8150 50  0000 C CNN
+F 1 "1k" V 3596 8150 50  0000 C CNN
+F 2 "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal" V 3840 8140 50  0001 C CNN
+F 3 "~" H 3800 8150 50  0001 C CNN
+	1    3800 8150
 	0    -1   -1   0   
 $EndComp
-Wire Wire Line
-	3950 7750 3900 7750
 Wire Wire Line
 	3950 7800 3950 7750
 Connection ~ 3950 7750
 Connection ~ 3500 5900
-Wire Wire Line
-	3950 8150 3950 8200
-Wire Wire Line
-	3950 8150 3950 8100
-Connection ~ 3950 8150
 Text GLabel 4000 7750 2    50   Input ~ 0
 CredentialsReset
 Wire Wire Line
 	4000 7750 3950 7750
-Wire Wire Line
-	3300 8150 3950 8150
-Wire Wire Line
-	3300 7750 3600 7750
 $Comp
 L Custom:SW_Push_Dual_Custom Credentials_Reset1
 U 1 1 5F9F281E
-P 3150 7950
-F 0 "Credentials_Reset1" V 2900 8300 50  0000 R CNN
-F 1 "SW_Push_Dual_Custom" V 2800 8350 50  0000 R CNN
-F 2 "Button_Switch_THT:SW_PUSH-12mm_Wuerth-430476085716" H 3150 7950 50  0001 C CNN
-F 3 "" H 3150 7950 50  0001 C CNN
-	1    3150 7950
+P 3400 7950
+F 0 "Credentials_Reset1" V 3446 8147 50  0000 L CNN
+F 1 "SW_Push_Dual_Custom" V 3355 8147 50  0000 L CNN
+F 2 "Button_Switch_THT:SW_PUSH-12mm_Wuerth-430476085716" H 3400 7950 50  0001 C CNN
+F 3 "" H 3400 7950 50  0001 C CNN
+	1    3400 7950
 	0    -1   -1   0   
 $EndComp
-Wire Wire Line
-	3100 8150 3300 8150
-Connection ~ 3300 8150
-Wire Wire Line
-	3100 7750 3300 7750
-Connection ~ 3300 7750
 Text GLabel 3800 6850 2    50   Input ~ 0
 CredentialsReset
 $Comp
@@ -2614,6 +2597,20 @@ Wire Wire Line
 Connection ~ 3500 9850
 Wire Wire Line
 	3950 9850 3950 9750
+Wire Wire Line
+	3350 7750 3550 7750
+Wire Wire Line
+	3550 7750 3950 7750
+Connection ~ 3550 7750
+Wire Wire Line
+	3350 8150 3550 8150
+Wire Wire Line
+	3550 8400 3550 8150
+Connection ~ 3550 8150
+Wire Wire Line
+	3550 8150 3650 8150
+Wire Wire Line
+	3950 8150 3950 8100
 Wire Bus Line
 	10000 8750 13950 8750
 Wire Bus Line

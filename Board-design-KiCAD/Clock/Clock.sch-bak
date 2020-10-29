@@ -2518,7 +2518,7 @@ U 1 1 5F971AA8
 P 3950 9600
 F 0 "Debounce2" H 4065 9646 50  0000 L CNN
 F 1 "100nF" H 4065 9555 50  0000 L CNN
-F 2 "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P5.00mm" H 3988 9450 50  0001 C CNN
+F 2 "Custom:CP_Radial_H15.0mm_W14.0mm_T8.0mm_P8.5mm_Horizontal" H 3988 9450 50  0001 C CNN
 F 3 "~" H 3950 9600 50  0001 C CNN
 	1    3950 9600
 	1    0    0    -1  
