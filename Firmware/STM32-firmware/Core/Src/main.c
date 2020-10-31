@@ -101,6 +101,31 @@ DMA_HandleTypeDef hdma_usart1_tx;
 
 	/* UART data for transmission flags */
 		_Bool Feedback_Message = 0;		// Availability of feedback message for ESP8266
+
+	/* Alarm handlers */
+		_Bool VOLUME_TEST = 0; 		// Testing buzzer melody flag
+		_Bool BUZZER_ON = 0;		// Buzzer state flag
+
+		_Bool REPEATED = 0;			// Flag for alarm melody to repeat only once
+
+		uint8_t TIMER_INDEX = 0;			// Melody time frame index
+		uint8_t TIMER_PRELOAD_SIZE = 0;		// Number of time frames for a melody
+
+		uint16_t COUNTER_PERIOD = 65535;	// Value to update timer output compare register dynamically
+
+		uint16_t TIMER_PRELOAD[] = {		// Buzzer melody preload values for timer
+				10000, 819, 1168, 1104,
+				1435, 1175, 3232, 1336,
+				3234, 1300, 3317, 1035,
+				1091, 985, 1124, 1106
+		};
+
+	/* Input pulses handlers */
+		uint8_t EXTI_INTERRUPT_COUNTER = 0;		// Counter for 1-Hz input, recognising 5-s interval for time update cycle
+		uint8_t ESP8266_RESET_COUNTER = 0;		// Counter taking 1-Hz input clock source for 5-s idle period
+
+		// Storing reset state of ESP8266 to initiate idle period eliminating non-data UART transmission
+		_Bool ESP8266_RESET_FLAG = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -124,20 +149,7 @@ void clockAlarm(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-_Bool VOLUME_TEST = 0;
-_Bool BUZZER_ON = 0;
-uint8_t EXTI_INTERRUPT_COUNTER = 0;
 
-_Bool ESP8266_RESET_FLAG = 0;
-uint8_t ESP8266_RESET_COUNTER = 0;
-
-uint16_t TIMER_PRELOAD[] = {10000, 819, 1168, 1104, 1435, 1175, 3232, 1336, 3234, 1300, 3317, 1035, 1091, 985, 1124, 1106};
-uint8_t TIMER_INDEX = 0;
-uint8_t TIMER_PRELOAD_SIZE = 0;
-
-_Bool REPEATED = 0;
-
-uint16_t COUNTER_PERIOD = 65535;
 /* USER CODE END 0 */
 
 /**
